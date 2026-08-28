@@ -27,7 +27,7 @@
   <!-- Tesseract.js for OCR support on scanned/image-based PDFs -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-  <!-- External JS libraries for card generation -->
+  <!-- External JS libraries for card & PDF generation -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -131,7 +131,7 @@
           <div class="form-column left-column">
             
             <!-- 1. ফটো আইডি ও স্বাক্ষর -->
-            <div class="form-group" id="group-photoInput">
+            <div class="form-group" id="group-photoInput" data-field-id="photo" data-field-label="ফটো আইডি">
               <label class="field-label">
                 <i class="fa-solid fa-image"></i> ফটো আইডি ও স্বাক্ষর
               </label>
@@ -169,7 +169,7 @@
             </div>
 
             <!-- 2. আইডি নাম্বার -->
-            <div class="form-group" id="group-nidNo">
+            <div class="form-group" id="group-nidNo" data-field-id="nidNo" data-field-label="আইডি নাম্বার">
               <label for="nidNo" class="field-label">আইডি নাম্বার</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-id-card"></i>
@@ -178,7 +178,7 @@
             </div>
 
             <!-- 3. নাম (বাংলা) -->
-            <div class="form-group" id="group-nameBn">
+            <div class="form-group" id="group-nameBn" data-field-id="nameBn" data-field-label="নাম (বাংলা)">
               <label for="nameBn" class="field-label">নাম (বাংলা)</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-user-pen"></i>
@@ -187,7 +187,7 @@
             </div>
 
             <!-- 4. জন্ম তারিখ -->
-            <div class="form-group" id="group-dob">
+            <div class="form-group" id="group-dob" data-field-id="dob" data-field-label="জন্ম তারিখ">
               <label for="dob" class="field-label">জন্ম তারিখ</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-calendar-day"></i>
@@ -196,7 +196,7 @@
             </div>
 
             <!-- 5. পিতার নাম -->
-            <div class="form-group" id="group-fatherName">
+            <div class="form-group" id="group-fatherName" data-field-id="fatherName" data-field-label="পিতার নাম">
               <label for="fatherName" class="field-label">পিতার নাম</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-user-tie"></i>
@@ -205,7 +205,7 @@
             </div>
 
             <!-- 6. রক্তের গ্রুপ -->
-            <div class="form-group" id="group-bloodGroup">
+            <div class="form-group" id="group-bloodGroup" data-field-id="bloodGroup" data-field-label="রক্তের গ্রুপ">
               <label for="bloodGroup" class="field-label">রক্তের গ্রুপ</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-droplet"></i>
@@ -219,7 +219,7 @@
           <div class="form-column right-column">
             
             <!-- 1. আইডি সনাক্ত -->
-            <div class="form-group" id="group-idIdentify">
+            <div class="form-group" id="group-idIdentify" data-field-id="idIdentify" data-field-label="আইডি সনাক্ত">
               <label for="idIdentify" class="field-label">আইডি সনাক্ত</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-fingerprint"></i>
@@ -228,7 +228,7 @@
             </div>
 
             <!-- 2. পিন নাম্বার -->
-            <div class="form-group" id="group-pinNo">
+            <div class="form-group" id="group-pinNo" data-field-id="pinNo" data-field-label="পিন নাম্বার">
               <label for="pinNo" class="field-label">পিন নাম্বার</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-hashtag"></i>
@@ -237,7 +237,7 @@
             </div>
 
             <!-- 3. নাম (ইংরেজি) -->
-            <div class="form-group" id="group-nameEn">
+            <div class="form-group" id="group-nameEn" data-field-id="nameEn" data-field-label="নাম (ইংরেজি)">
               <label for="nameEn" class="field-label">নাম (ইংরেজি)</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-font"></i>
@@ -246,7 +246,7 @@
             </div>
 
             <!-- 4. জন্মস্থান -->
-            <div class="form-group" id="group-pob">
+            <div class="form-group" id="group-pob" data-field-id="pob" data-field-label="জন্মস্থান">
               <label for="pob" class="field-label">জন্মস্থান</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-location-dot"></i>
@@ -255,7 +255,7 @@
             </div>
 
             <!-- 5. মাতার নাম -->
-            <div class="form-group" id="group-motherName">
+            <div class="form-group" id="group-motherName" data-field-id="motherName" data-field-label="মাতার নাম">
               <label for="motherName" class="field-label">মাতার নাম</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-person-dress"></i>
@@ -264,7 +264,7 @@
             </div>
 
             <!-- 6. ইস্যু তারিখ -->
-            <div class="form-group" id="group-issueDate">
+            <div class="form-group" id="group-issueDate" data-field-id="issueDate" data-field-label="ইস্যু তারিখ">
               <label for="issueDate" class="field-label">ইস্যু তারিখ</label>
               <div class="input-with-icon">
                 <i class="fa-solid fa-calendar-check"></i>
@@ -278,7 +278,7 @@
 
         <!-- FULL WIDTH (দুই কলামের নিচে): 7. ঠিকানা -->
         <div class="form-row full-width-row" style="margin-top: 18px;">
-          <div class="form-group full" id="group-address">
+          <div class="form-group full" id="group-address" data-field-id="address" data-field-label="ঠিকানা">
             <label for="address" class="field-label">ঠিকানা</label>
             <div class="input-with-icon textarea-icon-wrapper">
               <i class="fa-solid fa-map-location-dot"></i>
@@ -479,7 +479,7 @@
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
         <button type="button" id="downloadExactPdfBtn" class="btn-primary-download" style="background-color: #059669; padding: 8px 16px; font-size: 0.95rem;">
-          <i class="fa-solid fa-download"></i> অরিজিনাল PDF ডাউনলোড
+          <i class="fa-solid fa-download"></i> PDF ডাউনলোড করুন
         </button>
         <button type="button" id="openPdfNewTabBtn" class="btn-primary-download" style="background-color: #0284c7; padding: 8px 16px; font-size: 0.95rem;">
           <i class="fa-solid fa-arrow-up-right-from-square"></i> নতুন ট্যাবে খুলুন
@@ -491,12 +491,12 @@
 
       <div id="printArea" style="text-align: center; margin-bottom: 15px;">
         <h3 style="margin-bottom: 12px; color: #1e3a8a; font-weight: 700; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> NID PDF (Exact Original File)
+          <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> NID PDF (Exact Document)
         </h3>
         <div id="dashPdfFrameContainer" style="width: 100%; min-height: 450px; border-radius: 8px; overflow-y: auto; background: #f8fafc; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center;">
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; color: #64748b; gap: 12px;">
             <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.2rem; color: #0088cc;"></i>
-            <span style="font-size: 1rem; font-weight: 500;">অরিজিনাল NID PDF লোড হচ্ছে...</span>
+            <span style="font-size: 1rem; font-weight: 500;">NID PDF লোড হচ্ছে...</span>
           </div>
         </div>
       </div>
@@ -504,21 +504,21 @@
   </div>
 
   <!-- =====================================================================
-       SAVED NID LIST / DASHBOARD MODAL
+       SAVED NID LIST / DASHBOARD MODAL WITH COMPLETE PDF DOWNLOAD SYSTEM
        ===================================================================== -->
   <div id="dashboardModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1050px;">
+    <div class="modal-content" style="max-width: 1100px;">
       <div class="modal-header" style="background-color: #1e3a8a; justify-content: center; position: relative;">
-        <div class="modal-title" style="color: white; font-weight: bold; font-size: 1.2rem;">
-          <i class="fa-solid fa-id-card-clip"></i> আইডি কার্ড লিস্ট
+        <div class="modal-title" style="color: white; font-weight: bold; font-size: 1.25rem;">
+          <i class="fa-solid fa-id-card-clip"></i> আইডি কার্ড লিস্ট ও PDF ডাউনলোড সিস্টেম
         </div>
         <button type="button" class="btn-close" id="closeDashboardBtn" style="position: absolute; right: 20px; color: white; background: none; border: none; font-size: 1.6rem; cursor: pointer;">&times;</button>
       </div>
 
       <div class="modal-body" style="background-color: #f8fafc; padding: 20px;">
         
-        <!-- Controls Bar -->
-        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <!-- Top Toolbar with Batch PDF Download -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 16px; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 4px;">
               <select id="listLimit" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; font-weight: 600; cursor: pointer;">
@@ -530,10 +530,14 @@
               <span style="color: #475569; font-size: 0.9rem;">টি দেখুন</span>
             </div>
             
-            <button type="button" id="deleteSelectedBtn" style="padding: 6px 12px; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: none;">
-              <i class="fa-solid fa-trash-can"></i> নির্বাচিত মুছুন (<span id="selectedCount">0</span>)
+            <!-- Batch PDF Download Option -->
+            <button type="button" id="downloadSelectedPdfBtn" style="padding: 7px 14px; background: #059669; color: white; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; display: none; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-file-arrow-down"></i> নির্বাচিত PDF ডাউনলোড (<span id="selectedCount">0</span>)
             </button>
-            <button type="button" id="clearAllRecordsBtn" style="padding: 6px 12px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+            <button type="button" id="deleteSelectedBtn" style="padding: 7px 12px; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: none; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-trash-can"></i> নির্বাচিত মুছুন
+            </button>
+            <button type="button" id="clearAllRecordsBtn" style="padding: 7px 12px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
               <i class="fa-solid fa-broom"></i> সব খালি করুন
             </button>
           </div>
@@ -541,9 +545,9 @@
           <div style="display: flex; gap: 8px; align-items: center;">
             <div style="position: relative; display: flex; align-items: center;">
               <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; color: #94a3b8;"></i>
-              <input type="text" id="searchNid" placeholder="আইডি বা নাম দিয়ে খুঁজুন..." style="padding: 7px 12px 7px 32px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; outline: none; min-width: 220px; font-family: var(--font-bn);">
+              <input type="text" id="searchNid" placeholder="আইডি বা নাম দিয়ে খুঁজুন..." style="padding: 7px 12px 7px 32px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; outline: none; min-width: 230px; font-family: var(--font-bn);">
             </div>
-            <button type="button" id="loadSampleDataBtn" style="padding: 7px 12px; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" title="পরীক্ষার জন্য নমুনা ডাটা লোড">
+            <button type="button" id="loadSampleDataBtn" style="padding: 7px 12px; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" title="পরীক্ষার জন্য নমুনা ডাটা যোগ">
               <i class="fa-solid fa-plus"></i> নমুনা ডাটা
             </button>
           </div>
@@ -551,14 +555,14 @@
 
         <!-- Table Container -->
         <div style="overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
-          <table style="width: 100%; border-collapse: collapse; text-align: center; min-width: 800px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: center; min-width: 850px;">
             <thead>
-              <tr style="background-color: #1e3a8a; color: white; font-size: 0.9rem;">
+              <tr style="background-color: #1e3a8a; color: white; font-size: 0.92rem;">
                 <th style="padding: 12px; width: 40px;"><input type="checkbox" id="selectAll" style="cursor: pointer;"></th>
                 <th style="padding: 12px;"><i class="fa-solid fa-id-card"></i> আইডি নং</th>
                 <th style="padding: 12px;"><i class="fa-solid fa-user"></i> নাম</th>
                 <th style="padding: 12px;"><i class="fa-solid fa-cake-candles"></i> জন্ম তারিখ</th>
-                <th style="padding: 12px;"><i class="fa-solid fa-gear"></i> একশন</th>
+                <th style="padding: 12px; width: 280px;"><i class="fa-solid fa-file-pdf"></i> PDF ডাউনলোড ও একশন</th>
                 <th style="padding: 12px;"><i class="fa-solid fa-clock"></i> সময়</th>
               </tr>
             </thead>
@@ -574,13 +578,16 @@
             ১ থেকে ০ (মোট ০)
           </div>
           <div style="display: flex; gap: 6px;" id="paginationControls">
-            <!-- Dynamic page buttons will be populated here -->
+            <!-- Dynamic page buttons -->
           </div>
         </div>
 
       </div>
     </div>
   </div>
+
+  <!-- Offscreen Container for Generating High-Resolution PDF Documents -->
+  <div id="dynamicPdfRenderContainer" style="position: fixed; left: -9999px; top: -9999px; width: 800px; background: #ffffff; z-index: -1;"></div>
 
   <!-- Custom Scripts -->
   <script src="app.js"></script>
