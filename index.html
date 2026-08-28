@@ -8,7 +8,7 @@
   <!-- Google Fonts for Bengali and English typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   
   <!-- FontAwesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -24,6 +24,9 @@
     }
   </script>
   
+  <!-- Tesseract.js for OCR support on scanned/image-based PDFs -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <!-- External JS libraries for card generation -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -79,11 +82,11 @@
 
         <div class="pdf-upload-text">
           <span class="title">NID সার্ভার কপি PDF ফাইল এখানে আপলোড করুন</span>
-          <span class="sub">PDF ড্রপ করুন বা ক্লিক করে সিলেক্ট করুন (ছবি, স্বাক্ষর ও সমস্ত তথ্য স্বয়ংক্রিয়ভাবে ফিল্ডে বসে যাবে)</span>
+          <span class="sub">PDF ড্রপ করুন বা ক্লিক করে সিলেক্ট করুন (ছবি, স্বাক্ষর ও ১৩টি নির্ধারিত তথ্য স্বয়ংক্রিয়ভাবে ফিল্ডে বসে যাবে)</span>
         </div>
 
         <div class="upload-buttons-container" style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 6px;">
-          <!-- GB / Server Copy PDF Upload -->
+          <!-- Server Copy PDF Upload -->
           <input type="file" id="pdfInput" accept=".pdf,application/pdf" style="display:none;">
           <label for="pdfInput" class="btn-pdf-upload" id="pdfUploadBtn" style="cursor: pointer;">
             <i class="fa-solid fa-file-pdf"></i> PDF ফাইল আপলোড
@@ -98,7 +101,7 @@
 
         <!-- File status badges -->
         <div id="uploadStatusBadge" style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-          <span id="gbBadge" class="hidden" style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;"><i class="fa-solid fa-check-circle"></i> <span id="gbBadgeText">GB PDF লোড হয়েছে</span></span>
+          <span id="gbBadge" class="hidden" style="background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;"><i class="fa-solid fa-check-circle"></i> <span id="gbBadgeText">PDF লোড হয়েছে</span></span>
           <span id="nidBadge" class="hidden" style="background:#d1fae5;color:#065f46;padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;"><i class="fa-solid fa-check-circle"></i> <span id="nidBadgeText">NID PDF লোড হয়েছে</span></span>
         </div>
       </div>
@@ -108,446 +111,192 @@
 
       <!-- Quick Action Utilities -->
       <div class="quick-bar">
+        <span class="fixed-fields-notice"><i class="fa-solid fa-lock"></i> ফর্মের ফিল্ড সংখ্যা (১৩টি) ও কাঠামো সুনির্দিষ্ট</span>
         <button type="button" id="clearFormBtn" class="btn-secondary-action">
           <i class="fa-solid fa-rotate-left"></i> সব মুছুন (Reset)
         </button>
       </div>
 
-      <!-- Main Input Form -->
+      <!-- =====================================================================
+           EXACT 13-FIELD FIXED FORM STRUCTURE (SOURCE OF TRUTH)
+           Left Column:  1. ফটো আইডি, 2. আইডি নাম্বার, 3. নাম (বাংলা), 4. জন্ম তারিখ, 5. পিতার নাম, 6. রক্তের গ্রুপ
+           Right Column: 1. আইডি সনাক্ত, 2. পিন নাম্বার, 3. নাম (ইংরেজি), 4. জন্মস্থান, 5. মাতার নাম, 6. ইস্যু তারিখ
+           Full Width:   7. ঠিকানা
+           ===================================================================== -->
       <form id="nidForm" autocomplete="off">
         
-        <!-- SECTION 1: Uploads -->
-        <div class="section-title">
-          <i class="fa-solid fa-camera"></i> ছবি ও স্বাক্ষর (Photo & Signature)
-        </div>
+        <div class="form-grid-columns">
+          
+          <!-- LEFT COLUMN (বাম পাশ) -->
+          <div class="form-column left-column">
+            
+            <!-- 1. ফটো আইডি ও স্বাক্ষর -->
+            <div class="form-group" id="group-photoInput">
+              <label class="field-label">
+                <i class="fa-solid fa-image"></i> ফটো আইডি ও স্বাক্ষর
+              </label>
+              <div class="photo-field-wrapper" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <!-- Photo -->
+                <div class="preview-box photo-box" id="photoPreviewContainer">
+                  <img id="photoPreview" src="" alt="Holder Photo" class="hidden">
+                  <div class="placeholder-icon" id="photoPlaceholder">
+                    <i class="fa-solid fa-user"></i>
+                    <span>ছবি নেই</span>
+                  </div>
+                </div>
+                <div class="photo-controls">
+                  <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                  <label for="photoInput" class="custom-file-btn">
+                    <i class="fa-solid fa-upload"></i> ছবি
+                  </label>
+                  <button type="button" id="removePhotoBtn" class="btn-remove-photo hidden">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
 
-        <div class="form-row upload-row">
-          <!-- Photo Upload -->
-          <div class="form-group half" id="group-photoInput">
-            <label class="field-label">ছবি ফাইল (Photo):</label>
-            <div class="file-input-wrapper">
-              <input type="file" id="photoInput" accept="image/*">
-              <label for="photoInput" class="custom-file-btn">Choose File</label>
-              <span class="file-chosen-text" id="photoChosenText">No file chosen</span>
-              <div class="preview-box photo-box" id="photoPreviewContainer">
-                <img id="photoPreview" src="" alt="Photo" class="hidden">
-                <div class="placeholder-icon" id="photoPlaceholder"><i class="fa-solid fa-user"></i></div>
+                <!-- Signature -->
+                <div class="preview-box sign-box" id="signPreviewContainer" style="width: 80px; height: 50px; border: 1px dashed #cbd5e1; border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff;">
+                  <img id="signPreview" src="" alt="Sign" class="hidden" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                  <div id="signPlaceholder" style="font-size: 0.65rem; color: #94a3b8; text-align: center;">স্বাক্ষর</div>
+                </div>
+                <div class="sign-controls">
+                  <input type="file" id="signInput" accept="image/*" style="display:none;">
+                  <label for="signInput" class="custom-file-btn" style="background-color: #64748b;">
+                    <i class="fa-solid fa-signature"></i> স্বাক্ষর
+                  </label>
+                </div>
               </div>
             </div>
-            <div class="field-error-msg hidden" id="err-photoInput"></div>
-          </div>
 
-          <!-- Signature Upload -->
-          <div class="form-group half" id="group-signInput">
-            <label class="field-label">স্বাক্ষর ফাইল (Signature):</label>
-            <div class="file-input-wrapper">
-              <input type="file" id="signInput" accept="image/*">
-              <label for="signInput" class="custom-file-btn">Choose File</label>
-              <span class="file-chosen-text" id="signChosenText">No file chosen</span>
-              <div class="preview-box sign-box" id="signPreviewContainer">
-                <img id="signPreview" src="" alt="Sign" class="hidden">
-                <div class="placeholder-icon" id="signPlaceholder"><i class="fa-solid fa-signature"></i></div>
+            <!-- 2. আইডি নাম্বার -->
+            <div class="form-group" id="group-nidNo">
+              <label for="nidNo" class="field-label">আইডি নাম্বার</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-id-card"></i>
+                <input type="text" id="nidNo" class="form-control" placeholder="আইডি নাম্বার লিখুন">
               </div>
             </div>
-            <div class="field-error-msg hidden" id="err-signInput"></div>
+
+            <!-- 3. নাম (বাংলা) -->
+            <div class="form-group" id="group-nameBn">
+              <label for="nameBn" class="field-label">নাম (বাংলা)</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-user-pen"></i>
+                <input type="text" id="nameBn" class="form-control font-bn" placeholder="বাংলায় নাম লিখুন">
+              </div>
+            </div>
+
+            <!-- 4. জন্ম তারিখ -->
+            <div class="form-group" id="group-dob">
+              <label for="dob" class="field-label">জন্ম তারিখ</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-calendar-day"></i>
+                <input type="text" id="dob" class="form-control" placeholder="YYYY-MM-DD বা DD/MM/YYYY">
+              </div>
+            </div>
+
+            <!-- 5. পিতার নাম -->
+            <div class="form-group" id="group-fatherName">
+              <label for="fatherName" class="field-label">পিতার নাম</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-user-tie"></i>
+                <input type="text" id="fatherName" class="form-control font-bn" placeholder="পিতার নাম লিখুন">
+              </div>
+            </div>
+
+            <!-- 6. রক্তের গ্রুপ -->
+            <div class="form-group" id="group-bloodGroup">
+              <label for="bloodGroup" class="field-label">রক্তের গ্রুপ</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-droplet"></i>
+                <input type="text" id="bloodGroup" class="form-control" placeholder="যেমন: A+, B+, O+, AB+">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN (ডান পাশ) -->
+          <div class="form-column right-column">
+            
+            <!-- 1. আইডি সনাক্ত -->
+            <div class="form-group" id="group-idIdentify">
+              <label for="idIdentify" class="field-label">আইডি সনাক্ত</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-fingerprint"></i>
+                <input type="text" id="idIdentify" class="form-control" placeholder="আইডি সনাক্ত / সনাক্তকরণ চিহ্ন">
+              </div>
+            </div>
+
+            <!-- 2. পিন নাম্বার -->
+            <div class="form-group" id="group-pinNo">
+              <label for="pinNo" class="field-label">পিন নাম্বার</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-hashtag"></i>
+                <input type="text" id="pinNo" class="form-control" placeholder="পিন নাম্বার লিখুন">
+              </div>
+            </div>
+
+            <!-- 3. নাম (ইংরেজি) -->
+            <div class="form-group" id="group-nameEn">
+              <label for="nameEn" class="field-label">নাম (ইংরেজি)</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-font"></i>
+                <input type="text" id="nameEn" class="form-control font-en" placeholder="Enter name in English">
+              </div>
+            </div>
+
+            <!-- 4. জন্মস্থান -->
+            <div class="form-group" id="group-pob">
+              <label for="pob" class="field-label">জন্মস্থান</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-location-dot"></i>
+                <input type="text" id="pob" class="form-control font-bn" placeholder="যেমন: ঢাকা, চট্টগ্রাম">
+              </div>
+            </div>
+
+            <!-- 5. মাতার নাম -->
+            <div class="form-group" id="group-motherName">
+              <label for="motherName" class="field-label">মাতার নাম</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-person-dress"></i>
+                <input type="text" id="motherName" class="form-control font-bn" placeholder="মাতার নাম লিখুন">
+              </div>
+            </div>
+
+            <!-- 6. ইস্যু তারিখ -->
+            <div class="form-group" id="group-issueDate">
+              <label for="issueDate" class="field-label">ইস্যু তারিখ</label>
+              <div class="input-with-icon">
+                <i class="fa-solid fa-calendar-check"></i>
+                <input type="text" id="issueDate" class="form-control" placeholder="যেমন: 13/08/2026 বা DD/MM/YYYY">
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- FULL WIDTH (দুই কলামের নিচে): 7. ঠিকানা -->
+        <div class="form-row full-width-row" style="margin-top: 18px;">
+          <div class="form-group full" id="group-address">
+            <label for="address" class="field-label">ঠিকানা</label>
+            <div class="input-with-icon textarea-icon-wrapper">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <textarea id="address" class="form-control address-box font-bn" rows="3" placeholder="পূর্ণ ঠিকানা লিখুন (বাসা/হোল্ডিং, গ্রাম/রাস্তা, ডাকঘর, উপজেলা, জেলা)"></textarea>
+            </div>
           </div>
         </div>
 
-        <!-- SECTION 2: Identity & Status Fields (Image 1) -->
-        <div class="section-title">
-          <i class="fa-solid fa-id-card-clip"></i> জাতীয় পরিচয়পত্র ও স্ট্যাটাস তথ্য (Image 1)
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-nidNo">
-            <label for="nidNo" class="field-label">National ID (এনআইডি নম্বর):</label>
-            <input type="text" id="nidNo" class="form-control" placeholder="যেমন: 5093044807">
-            <div class="field-error-msg hidden" id="err-nidNo"></div>
-          </div>
-          <div class="form-group half" id="group-pinNo">
-            <label for="pinNo" class="field-label">Pin (পিন নম্বর):</label>
-            <input type="text" id="pinNo" class="form-control" placeholder="যেমন: 19711515389700272">
-            <div class="field-error-msg hidden" id="err-pinNo"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-status">
-            <label for="status" class="field-label">Status (স্ট্যাটাস):</label>
-            <input type="text" id="status" class="form-control" placeholder="যেমন: printed">
-            <div class="field-error-msg hidden" id="err-status"></div>
-          </div>
-          <div class="form-group half" id="group-afisStatus">
-            <label for="afisStatus" class="field-label">Afis Status (আফিস স্ট্যাটাস):</label>
-            <input type="text" id="afisStatus" class="form-control" placeholder="যেমন: NO_MATCH / Identified">
-            <div class="field-error-msg hidden" id="err-afisStatus"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-lockFlag">
-            <label for="lockFlag" class="field-label">Lock Flag (লক ফ্ল্যাগ):</label>
-            <input type="text" id="lockFlag" class="form-control" placeholder="N">
-            <div class="field-error-msg hidden" id="err-lockFlag"></div>
-          </div>
-          <div class="form-group half" id="group-voterNo">
-            <label for="voterNo" class="field-label">Voter No (ভোটার নম্বর):</label>
-            <input type="text" id="voterNo" class="form-control" placeholder="যেমন: 150326000505">
-            <div class="field-error-msg hidden" id="err-voterNo"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-formNo">
-            <label for="formNo" class="field-label">Form No (ফর্ম নম্বর):</label>
-            <input type="text" id="formNo" class="form-control" placeholder="যেমন: 4700272">
-            <div class="field-error-msg hidden" id="err-formNo"></div>
-          </div>
-          <div class="form-group half" id="group-slNo">
-            <label for="slNo" class="field-label">Sl No (ক্রমিক নম্বর):</label>
-            <input type="text" id="slNo" class="form-control" placeholder="যেমন: 1193">
-            <div class="field-error-msg hidden" id="err-slNo"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full" id="group-tag">
-            <label for="tag" class="field-label">Tag (ট্যাগ):</label>
-            <input type="text" id="tag" class="form-control" placeholder="যেমন: migrated / Regular">
-            <div class="field-error-msg hidden" id="err-tag"></div>
-          </div>
-        </div>
-
-        <!-- SECTION 3: Personal Information -->
-        <div class="section-title">
-          <i class="fa-solid fa-user"></i> ব্যক্তিগত তথ্য (Personal Details)
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-nameBn">
-            <label for="nameBn" class="field-label">Name(Bangla) [নাম (বাংলা)]:</label>
-            <input type="text" id="nameBn" class="form-control" placeholder="বাংলায় নাম">
-            <div class="field-error-msg hidden" id="err-nameBn"></div>
-          </div>
-          <div class="form-group half" id="group-nameEn">
-            <label for="nameEn" class="field-label">Name(English) [নাম (ইংরেজি)]:</label>
-            <input type="text" id="nameEn" class="form-control" placeholder="Name in English">
-            <div class="field-error-msg hidden" id="err-nameEn"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-dob">
-            <label for="dob" class="field-label">Date of Birth (জন্ম তারিখ):</label>
-            <input type="text" id="dob" class="form-control" placeholder="YYYY-MM-DD বা DD/MM/YYYY">
-            <div class="field-error-msg hidden" id="err-dob"></div>
-          </div>
-          <div class="form-group half" id="group-pob">
-            <label for="pob" class="field-label">Birth Place (জন্মস্থান):</label>
-            <input type="text" id="pob" class="form-control" placeholder="যেমন: চট্টগ্রাম / ঢাকা">
-            <div class="field-error-msg hidden" id="err-pob"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-birthOther">
-            <label for="birthOther" class="field-label">Birth Other (জন্মস্থান অন্যান্য):</label>
-            <input type="text" id="birthOther" class="form-control" placeholder="অন্যান্য জন্মস্থান (যদি থাকে)">
-            <div class="field-error-msg hidden" id="err-birthOther"></div>
-          </div>
-          <div class="form-group half" id="group-birthRegNo">
-            <label for="birthRegNo" class="field-label">Birth Registration No (জন্ম নিবন্ধন নং):</label>
-            <input type="text" id="birthRegNo" class="form-control" placeholder="জন্ম নিবন্ধন নম্বর">
-            <div class="field-error-msg hidden" id="err-birthRegNo"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-gender">
-            <label for="gender" class="field-label">Gender (লিঙ্গ):</label>
-            <select id="gender" class="form-control">
-              <option value="">নির্বাচন করুন</option>
-              <option value="male">male (পুরুষ)</option>
-              <option value="female">female (মহিলা)</option>
-              <option value="other">other (অন্যান্য)</option>
-            </select>
-            <div class="field-error-msg hidden" id="err-gender"></div>
-          </div>
-          <div class="form-group half" id="group-marital">
-            <label for="marital" class="field-label">Marital (বৈবাহিক অবস্থা):</label>
-            <select id="marital" class="form-control">
-              <option value="">নির্বাচন করুন</option>
-              <option value="married">married (বিবাহিত)</option>
-              <option value="unmarried">unmarried (অবিবাহিত)</option>
-              <option value="widowed">widowed (বিধবা/বিপত্নীক)</option>
-              <option value="divorced">divorced (তালাকপ্রাপ্ত)</option>
-            </select>
-            <div class="field-error-msg hidden" id="err-marital"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-occupation">
-            <label for="occupation" class="field-label">Occupation (পেশা):</label>
-            <input type="text" id="occupation" class="form-control" placeholder="যেমন: ব্যবসা / চাকুরিজীবী">
-            <div class="field-error-msg hidden" id="err-occupation"></div>
-          </div>
-          <div class="form-group half" id="group-bloodGroup">
-            <label for="bloodGroup" class="field-label">Blood Group (রক্তের গ্রুপ):</label>
-            <input type="text" id="bloodGroup" class="form-control" placeholder="যেমন: A+, B+, O+, AB+">
-            <div class="field-error-msg hidden" id="err-bloodGroup"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-disability">
-            <label for="disability" class="field-label">Disability (প্রতিবন্ধিতা):</label>
-            <input type="text" id="disability" class="form-control" placeholder="None">
-            <div class="field-error-msg hidden" id="err-disability"></div>
-          </div>
-          <div class="form-group half" id="group-disabilityOther">
-            <label for="disabilityOther" class="field-label">Disability Other (অন্য প্রতিবন্ধিতা):</label>
-            <input type="text" id="disabilityOther" class="form-control" placeholder="অন্যান্য প্রতিবন্ধিতা">
-            <div class="field-error-msg hidden" id="err-disabilityOther"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-religion">
-            <label for="religion" class="field-label">Religion (ধর্ম):</label>
-            <input type="text" id="religion" class="form-control" placeholder="যেমন: Islam / Hinduism">
-            <div class="field-error-msg hidden" id="err-religion"></div>
-          </div>
-          <div class="form-group half" id="group-religionOther">
-            <label for="religionOther" class="field-label">Religion Other (অন্যান্য ধর্ম):</label>
-            <input type="text" id="religionOther" class="form-control" placeholder="অন্যান্য ধর্ম">
-            <div class="field-error-msg hidden" id="err-religionOther"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full" id="group-identification">
-            <label for="identification" class="field-label">Identification (শনাক্তকরণ চিহ্ন):</label>
-            <input type="text" id="identification" class="form-control" placeholder="শনাক্তকরণ চিহ্ন">
-            <div class="field-error-msg hidden" id="err-identification"></div>
-          </div>
-        </div>
-
-        <!-- SECTION 4: Parents & Spouse Information -->
-        <div class="section-title">
-          <i class="fa-solid fa-people-roof"></i> পিতা, মাতা ও স্বামী/স্ত্রীর তথ্য
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-fatherName">
-            <label for="fatherName" class="field-label">Father Name (পিতার নাম):</label>
-            <input type="text" id="fatherName" class="form-control" placeholder="পিতার পূর্ণ নাম">
-            <div class="field-error-msg hidden" id="err-fatherName"></div>
-          </div>
-          <div class="form-group half" id="group-nidFather">
-            <label for="nidFather" class="field-label">NID Father (পিতার এনআইডি):</label>
-            <input type="text" id="nidFather" class="form-control" placeholder="পিতার এনআইডি নম্বর">
-            <div class="field-error-msg hidden" id="err-nidFather"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-voterNoFather">
-            <label for="voterNoFather" class="field-label">Voter No Father (পিতার ভোটার নং):</label>
-            <input type="text" id="voterNoFather" class="form-control" placeholder="পিতার ভোটার নম্বর">
-            <div class="field-error-msg hidden" id="err-voterNoFather"></div>
-          </div>
-          <div class="form-group half" id="group-deathDateFather">
-            <label for="deathDateFather" class="field-label">Death Date Of Father (পিতার মৃত্যুর তারিখ):</label>
-            <input type="text" id="deathDateFather" class="form-control" placeholder="মৃত্যুর তারিখ">
-            <div class="field-error-msg hidden" id="err-deathDateFather"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-motherName">
-            <label for="motherName" class="field-label">Mother Name (মাতার নাম):</label>
-            <input type="text" id="motherName" class="form-control" placeholder="মাতার পূর্ণ নাম">
-            <div class="field-error-msg hidden" id="err-motherName"></div>
-          </div>
-          <div class="form-group half" id="group-nidMother">
-            <label for="nidMother" class="field-label">NID Mother (মাতার এনআইডি):</label>
-            <input type="text" id="nidMother" class="form-control" placeholder="মাতার এনআইডি নম্বর">
-            <div class="field-error-msg hidden" id="err-nidMother"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-voterNoMother">
-            <label for="voterNoMother" class="field-label">Voter No Mother (মাতার ভোটার নং):</label>
-            <input type="text" id="voterNoMother" class="form-control" placeholder="মাতার ভোটার নম্বর">
-            <div class="field-error-msg hidden" id="err-voterNoMother"></div>
-          </div>
-          <div class="form-group half" id="group-deathDateMother">
-            <label for="deathDateMother" class="field-label">Death Date Of Mother (মাতার মৃত্যুর তারিখ):</label>
-            <input type="text" id="deathDateMother" class="form-control" placeholder="মৃত্যুর তারিখ">
-            <div class="field-error-msg hidden" id="err-deathDateMother"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-spouseName">
-            <label for="spouseName" class="field-label">Spouse Name (স্বামী/স্ত্রীর নাম):</label>
-            <input type="text" id="spouseName" class="form-control" placeholder="স্বামী/স্ত্রীর নাম">
-            <div class="field-error-msg hidden" id="err-spouseName"></div>
-          </div>
-          <div class="form-group half" id="group-nidSpouse">
-            <label for="nidSpouse" class="field-label">Nid Spouse (স্বামী/স্ত্রীর এনআইডি):</label>
-            <input type="text" id="nidSpouse" class="form-control" placeholder="স্বামী/স্ত্রীর এনআইডি">
-            <div class="field-error-msg hidden" id="err-nidSpouse"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-voterNoSpouse">
-            <label for="voterNoSpouse" class="field-label">Voter No Spouse (স্বামী/স্ত্রীর ভোটার নং):</label>
-            <input type="text" id="voterNoSpouse" class="form-control" placeholder="স্বামী/স্ত্রীর ভোটার নং">
-            <div class="field-error-msg hidden" id="err-voterNoSpouse"></div>
-          </div>
-          <div class="form-group half" id="group-deathDateSpouse">
-            <label for="deathDateSpouse" class="field-label">Death Date Of Spouse (স্বামী/স্ত্রীর মৃত্যুর তারিখ):</label>
-            <input type="text" id="deathDateSpouse" class="form-control" placeholder="মৃত্যুর তারিখ">
-            <div class="field-error-msg hidden" id="err-deathDateSpouse"></div>
-          </div>
-        </div>
-
-        <!-- SECTION 5: Addresses & Voter Area -->
-        <div class="section-title">
-          <i class="fa-solid fa-map-location-dot"></i> ঠিকানা ও ভোটার এলাকা
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full" id="group-presentAddress">
-            <label for="presentAddress" class="field-label">Present Address (বর্তমান ঠিকানা):</label>
-            <textarea id="presentAddress" class="form-control address-box" rows="2" placeholder="বর্তমান ঠিকানা"></textarea>
-            <div class="field-error-msg hidden" id="err-presentAddress"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full" id="group-permanentAddress">
-            <label for="permanentAddress" class="field-label">Permanent Address (স্থায়ী ঠিকানা):</label>
-            <textarea id="permanentAddress" class="form-control address-box" rows="2" placeholder="স্থায়ী ঠিকানা"></textarea>
-            <div class="field-error-msg hidden" id="err-permanentAddress"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-voterArea">
-            <label for="voterArea" class="field-label">Voter Area (ভোটার এলাকা):</label>
-            <input type="text" id="voterArea" class="form-control" placeholder="ভোটার এলাকা">
-            <div class="field-error-msg hidden" id="err-voterArea"></div>
-          </div>
-          <div class="form-group half" id="group-voterAt">
-            <label for="voterAt" class="field-label">Voter At (ভোটার কেন্দ্র/স্থান):</label>
-            <input type="text" id="voterAt" class="form-control" placeholder="permanent / ভোটার কেন্দ্র">
-            <div class="field-error-msg hidden" id="err-voterAt"></div>
-          </div>
-        </div>
-
-        <!-- SECTION 6: Education, Contact & Other Documents -->
-        <div class="section-title">
-          <i class="fa-solid fa-graduation-cap"></i> শিক্ষা, যোগাযোগ ও অন্যান্য তথ্য
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-education">
-            <label for="education" class="field-label">Education (শিক্ষাগত যোগ্যতা):</label>
-            <input type="text" id="education" class="form-control" placeholder="যেমন: ৫ম শ্রেণী / এস.এস.সি / স্নাতক">
-            <div class="field-error-msg hidden" id="err-education"></div>
-          </div>
-          <div class="form-group half" id="group-educationOther">
-            <label for="educationOther" class="field-label">Education Other (অন্য শিক্ষাগত যোগ্যতা):</label>
-            <input type="text" id="educationOther" class="form-control" placeholder="অন্যান্য যোগ্যতা">
-            <div class="field-error-msg hidden" id="err-educationOther"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-educationSub">
-            <label for="educationSub" class="field-label">Education Sub (বিষয়/সাবজেক্ট):</label>
-            <input type="text" id="educationSub" class="form-control" placeholder="বিষয়">
-            <div class="field-error-msg hidden" id="err-educationSub"></div>
-          </div>
-          <div class="form-group half" id="group-mobile">
-            <label for="mobile" class="field-label">Mobile (মোবাইল নম্বর):</label>
-            <input type="text" id="mobile" class="form-control" placeholder="01XXXXXXXXX">
-            <div class="field-error-msg hidden" id="err-mobile"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-phone">
-            <label for="phone" class="field-label">Phone (ফোন):</label>
-            <input type="text" id="phone" class="form-control" placeholder="ফোন">
-            <div class="field-error-msg hidden" id="err-phone"></div>
-          </div>
-          <div class="form-group half" id="group-email">
-            <label for="email" class="field-label">Email (ইমেইল):</label>
-            <input type="email" id="email" class="form-control" placeholder="ইমেইল অ্যাড্রেস">
-            <div class="field-error-msg hidden" id="err-email"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-tin">
-            <label for="tin" class="field-label">TIN (টিন নম্বর):</label>
-            <input type="text" id="tin" class="form-control" placeholder="টিন নম্বর">
-            <div class="field-error-msg hidden" id="err-tin"></div>
-          </div>
-          <div class="form-group half" id="group-driving">
-            <label for="driving" class="field-label">Driving (ড্রাইভিং লাইসেন্স):</label>
-            <input type="text" id="driving" class="form-control" placeholder="ড্রাইভিং লাইসেন্স নম্বর">
-            <div class="field-error-msg hidden" id="err-driving"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-passport">
-            <label for="passport" class="field-label">Passport (পাসপোর্ট নম্বর):</label>
-            <input type="text" id="passport" class="form-control" placeholder="পাসপোর্ট নম্বর">
-            <div class="field-error-msg hidden" id="err-passport"></div>
-          </div>
-          <div class="form-group half" id="group-laptopId">
-            <label for="laptopId" class="field-label">Laptop ID (ল্যাপটপ আইডি):</label>
-            <input type="text" id="laptopId" class="form-control" placeholder="WS_3822">
-            <div class="field-error-msg hidden" id="err-laptopId"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group half" id="group-noFinger">
-            <label for="noFinger" class="field-label">No Finger (নো ফিঙ্গার):</label>
-            <input type="text" id="noFinger" class="form-control" placeholder="0">
-            <div class="field-error-msg hidden" id="err-noFinger"></div>
-          </div>
-          <div class="form-group half" id="group-noFingerPrint">
-            <label for="noFingerPrint" class="field-label">No Finger Print (নো ফিঙ্গার প্রিন্ট):</label>
-            <input type="text" id="noFingerPrint" class="form-control" placeholder="0">
-            <div class="field-error-msg hidden" id="err-noFingerPrint"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group full" id="group-issueDate">
-            <label for="issueDate" class="field-label">ইস্যু তারিখ (Issue Date):</label>
-            <input type="text" id="issueDate" class="form-control" placeholder="যেমন: 13/08/2026 বা DD/MM/YYYY">
-            <div class="field-error-msg hidden" id="err-issueDate"></div>
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="form-action" style="display: flex; gap: 10px;">
-          <button type="submit" id="saveBtn" class="btn-primary-download" style="background-color: #28a745;">
-            <i class="fa-solid fa-save"></i> সেভ করুন (Save)
+        <!-- Submit & Action Buttons -->
+        <div class="form-action-area" style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
+          <button type="submit" id="saveBtn" class="btn-primary-action btn-save" style="background-color: #28a745; color: white;">
+            <i class="fa-solid fa-floppy-disk"></i> সেভ করুন (Save)
           </button>
-          <button type="button" id="listBtn" class="btn-primary-download">
-            <i class="fa-solid fa-list"></i> NID list dekhun
+          <button type="button" id="generatePdfBtn" class="btn-primary-action btn-generate-pdf" style="background-color: #0088cc; color: white;">
+            <i class="fa-solid fa-id-card"></i> NID স্মার্ট কার্ড ও PDF তৈরি
+          </button>
+          <button type="button" id="listBtn" class="btn-secondary-action btn-view-list" style="background-color: #1e3a8a; color: white;">
+            <i class="fa-solid fa-list-check"></i> আইডি কার্ড লিস্ট
           </button>
         </div>
 
@@ -556,111 +305,15 @@
     </div>
   </div>
 
-  <!-- PDF Dashboard Modal -->
-  <div id="pdfDashboardModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 850px; padding: 20px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #0088cc; padding-bottom: 10px;">
-        <h2 style="margin: 0; color: #0088cc;"><i class="fa-solid fa-address-card"></i> NID Dashboard</h2>
-        <button type="button" class="btn-close" id="closePdfDashboardBtn" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;">&times;</button>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #f8f9fa; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
-        <div><strong><i class="fa-solid fa-id-badge"></i> NID ID Number:</strong> <span id="dashNidNo"></span></div>
-        <div><strong><i class="fa-solid fa-user"></i> Name:</strong> <span id="dashName"></span></div>
-        <div><strong><i class="fa-solid fa-calendar-days"></i> Date of Birth:</strong> <span id="dashDob"></span></div>
-        <div><strong><i class="fa-solid fa-clock"></i> Time:</strong> <span id="dashTime"></span></div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-        <button type="button" id="downloadExactPdfBtn" class="btn-primary-download" style="background-color: #059669; padding: 8px 16px; font-size: 0.95rem;">
-          <i class="fa-solid fa-download"></i> অরিজিনাল PDF ডাউনলোড
-        </button>
-        <button type="button" id="openPdfNewTabBtn" class="btn-primary-download" style="background-color: #0284c7; padding: 8px 16px; font-size: 0.95rem;">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i> নতুন ট্যাবে খুলুন
-        </button>
-        <button type="button" id="printIdBtn" class="btn-primary-download" style="background-color: #0088cc; padding: 8px 16px; font-size: 0.95rem;">
-          <i class="fa-solid fa-print"></i> Print ID
-        </button>
-      </div>
-
-      <div id="printArea" style="text-align: center; margin-bottom: 15px;">
-        <h3 style="margin-bottom: 12px; color: #1e3a8a; font-weight: 700; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> NID PDF (Exact Original File)
-        </h3>
-        <div id="dashPdfFrameContainer" style="width: 100%; min-height: 450px; border-radius: 8px; overflow-y: auto; background: #f8fafc; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center;">
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; color: #64748b; gap: 12px;">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.2rem; color: #0088cc;"></i>
-            <span style="font-size: 1rem; font-weight: 500;">অরিজিনাল NID PDF লোড হচ্ছে...</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dashboard Modal -->
-  <div id="dashboardModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 1000px;">
-      <div class="modal-header" style="background-color: #0088cc; justify-content: center;">
-        <div class="modal-title" style="color: white; font-weight: bold; font-size: 1.2rem;">
-          আইডি কার্ড লিস্ট
-        </div>
-        <button type="button" class="btn-close" id="closeDashboardBtn" style="position: absolute; right: 20px; color: white;">&times;</button>
-      </div>
-
-      <div class="modal-body" style="background-color: #f0f8ff; padding: 20px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 5px;">
-            <select id="listLimit" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; background: white;">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-            <span style="color: #555; font-size: 0.9rem;">টি দেখুন</span>
-          </div>
-          <div>
-            <input type="text" id="searchNid" placeholder="খুঁজুন" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; background: white; outline: none;">
-          </div>
-        </div>
-
-        <div style="overflow-x: auto; background: white; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
-          <table style="width: 100%; border-collapse: collapse; text-align: center; min-width: 800px;">
-            <thead>
-              <tr style="background-color: #1e3a8a; color: white;">
-                <th style="padding: 12px; width: 40px;"><input type="checkbox" id="selectAll"></th>
-                <th style="padding: 12px;"><i class="fa-solid fa-id-card"></i> আইডি নং</th>
-                <th style="padding: 12px;"><i class="fa-solid fa-user"></i> নাম</th>
-                <th style="padding: 12px;"><i class="fa-solid fa-cake-candles"></i> জন্ম তারিখ</th>
-                <th style="padding: 12px;"><i class="fa-solid fa-download"></i> ডাউনলোড</th>
-                <th style="padding: 12px;"><i class="fa-solid fa-clock"></i> সময়</th>
-              </tr>
-            </thead>
-            <tbody id="nidTableBody">
-              <!-- Rows will be dynamically populated here -->
-            </tbody>
-          </table>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-          <div style="color: #666; font-size: 0.9rem;" id="paginationInfo">
-            ১ থেকে ০ (মোট ০)
-          </div>
-          <div style="display: flex; gap: 5px;" id="paginationControls">
-            <button style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 3px; cursor: not-allowed; color: #999;">আগে</button>
-            <button style="padding: 5px 10px; border: none; background: #1e3a8a; color: white; border-radius: 3px; font-weight: bold;">1</button>
-            <button style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 3px; cursor: not-allowed; color: #999;">পরে</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- NID Card Modal / Print & Export Output Container -->
+  <!-- =====================================================================
+       NID SMART CARD PREVIEW & GENERATE MODAL (FRONT & BACK CARD)
+       ===================================================================== -->
   <div id="cardModal" class="modal-overlay hidden">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 900px;">
       
       <div class="modal-header">
         <div class="modal-title">
-          <i class="fa-solid fa-id-card"></i> জাতীয় পরিচয়পত্র ও সার্ভার কপি প্রিভিউ (<span id="modalYearLabel">NEW Format</span>)
+          <i class="fa-solid fa-id-card"></i> জাতীয় পরিচয়পত্র স্মার্ট কার্ড প্রিভিউ (<span id="modalYearLabel">NEW Format</span>)
         </div>
         <button type="button" class="btn-close" id="closeModalBtn">&times;</button>
       </div>
@@ -669,13 +322,13 @@
         
         <!-- Action Toolbar inside Modal -->
         <div class="modal-actions-bar">
-          <button type="button" class="action-btn" id="exportPdfBtn">
+          <button type="button" class="action-btn" id="exportPdfBtn" style="background-color: #059669; color: white;">
             <i class="fa-solid fa-file-pdf"></i> PDF ডাউনলোড
           </button>
-          <button type="button" class="action-btn" id="exportPngBtn">
+          <button type="button" class="action-btn" id="exportPngBtn" style="background-color: #0284c7; color: white;">
             <i class="fa-solid fa-image"></i> ইমেজ ডাউনলোড (PNG)
           </button>
-          <button type="button" class="action-btn" id="printCardBtn">
+          <button type="button" class="action-btn" id="printCardBtn" style="background-color: #1e3a8a; color: white;">
             <i class="fa-solid fa-print"></i> প্রিন্ট করুন
           </button>
         </div>
@@ -800,225 +453,132 @@
             </div>
           </div>
 
-          <!-- COMPREHENSIVE SERVER COPY / ALL FIELDS SUMMARY TABLE -->
-          <div class="server-copy-sheet" id="serverCopySheet">
-            <div class="server-copy-header">
-              <div class="ec-seal">
-                <svg viewBox="0 0 100 100" style="width:50px;height:50px;">
-                  <circle cx="50" cy="50" r="46" fill="#006A4E"/>
-                  <circle cx="50" cy="50" r="30" fill="#DA291C"/>
-                  <path d="M50 25 L53 35 L63 35 L55 42 L58 52 L50 45 L42 52 L45 42 L37 35 L47 35 Z" fill="#FFD700"/>
-                </svg>
-              </div>
-              <div class="ec-texts">
-                <h3>বাংলাদেশ নির্বাচন কমিশন</h3>
-                <p>জাতীয় পরিচয়পত্র ও ভোটার তালিকা ডাটাবেজ (সার্ভার কপি)</p>
-              </div>
-            </div>
-
-            <table class="server-data-table">
-              <thead>
-                <tr>
-                  <th colspan="4" class="table-group-header">১. সাধারণ ও ভোটার তথ্য</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="col-lbl">National ID</td>
-                  <td class="col-val" id="scNid">-</td>
-                  <td class="col-lbl">Pin</td>
-                  <td class="col-val" id="scPin">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Status</td>
-                  <td class="col-val" id="scStatus">-</td>
-                  <td class="col-lbl">Afis Status</td>
-                  <td class="col-val" id="scAfis">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Lock Flag</td>
-                  <td class="col-val" id="scLock">-</td>
-                  <td class="col-lbl">Voter No</td>
-                  <td class="col-val" id="scVoterNo">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Form No</td>
-                  <td class="col-val" id="scFormNo">-</td>
-                  <td class="col-lbl">Sl No</td>
-                  <td class="col-val" id="scSlNo">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Tag</td>
-                  <td class="col-val" id="scTag">-</td>
-                  <td class="col-lbl">Laptop ID</td>
-                  <td class="col-val" id="scLaptopId">-</td>
-                </tr>
-              </tbody>
-
-              <thead>
-                <tr>
-                  <th colspan="4" class="table-group-header">২. ব্যক্তিগত তথ্য</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="col-lbl">Name (Bangla)</td>
-                  <td class="col-val" id="scNameBn">-</td>
-                  <td class="col-lbl">Name (English)</td>
-                  <td class="col-val" id="scNameEn">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Date of Birth</td>
-                  <td class="col-val" id="scDob">-</td>
-                  <td class="col-lbl">Birth Place</td>
-                  <td class="col-val" id="scPob">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Birth Other</td>
-                  <td class="col-val" id="scBirthOther">-</td>
-                  <td class="col-lbl">Birth Reg No</td>
-                  <td class="col-val" id="scBirthReg">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Gender</td>
-                  <td class="col-val" id="scGender">-</td>
-                  <td class="col-lbl">Marital</td>
-                  <td class="col-val" id="scMarital">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Occupation</td>
-                  <td class="col-val" id="scOccupation">-</td>
-                  <td class="col-lbl">Blood Group</td>
-                  <td class="col-val" id="scBlood">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Religion</td>
-                  <td class="col-val" id="scReligion">-</td>
-                  <td class="col-lbl">Religion Other</td>
-                  <td class="col-val" id="scReligionOther">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Disability</td>
-                  <td class="col-val" id="scDisability">-</td>
-                  <td class="col-lbl">Disability Other</td>
-                  <td class="col-val" id="scDisabilityOther">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Identification</td>
-                  <td class="col-val" colspan="3" id="scIdMark">-</td>
-                </tr>
-              </tbody>
-
-              <thead>
-                <tr>
-                  <th colspan="4" class="table-group-header">৩. পিতামাতা ও স্বামী/স্ত্রীর তথ্য</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="col-lbl">Father Name</td>
-                  <td class="col-val" id="scFather">-</td>
-                  <td class="col-lbl">NID Father</td>
-                  <td class="col-val" id="scNidFather">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Voter No Father</td>
-                  <td class="col-val" id="scVoterFather">-</td>
-                  <td class="col-lbl">Death Date Father</td>
-                  <td class="col-val" id="scDeathFather">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Mother Name</td>
-                  <td class="col-val" id="scMother">-</td>
-                  <td class="col-lbl">NID Mother</td>
-                  <td class="col-val" id="scNidMother">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Voter No Mother</td>
-                  <td class="col-val" id="scVoterMother">-</td>
-                  <td class="col-lbl">Death Date Mother</td>
-                  <td class="col-val" id="scDeathMother">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Spouse Name</td>
-                  <td class="col-val" id="scSpouse">-</td>
-                  <td class="col-lbl">Nid Spouse</td>
-                  <td class="col-val" id="scNidSpouse">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Voter No Spouse</td>
-                  <td class="col-val" id="scVoterSpouse">-</td>
-                  <td class="col-lbl">Death Date Spouse</td>
-                  <td class="col-val" id="scDeathSpouse">-</td>
-                </tr>
-              </tbody>
-
-              <thead>
-                <tr>
-                  <th colspan="4" class="table-group-header">৪. ঠিকানা ও এলাকা</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="col-lbl">Present Address</td>
-                  <td class="col-val" colspan="3" id="scPresAddr">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Permanent Address</td>
-                  <td class="col-val" colspan="3" id="scPermAddr">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Voter Area</td>
-                  <td class="col-val" id="scVoterArea">-</td>
-                  <td class="col-lbl">Voter At</td>
-                  <td class="col-val" id="scVoterAt">-</td>
-                </tr>
-              </tbody>
-
-              <thead>
-                <tr>
-                  <th colspan="4" class="table-group-header">৫. শিক্ষা, যোগাযোগ ও অন্যান্য ডকুমেন্টস</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="col-lbl">Education</td>
-                  <td class="col-val" id="scEdu">-</td>
-                  <td class="col-lbl">Education Sub</td>
-                  <td class="col-val" id="scEduSub">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Education Other</td>
-                  <td class="col-val" id="scEduOther">-</td>
-                  <td class="col-lbl">Mobile</td>
-                  <td class="col-val" id="scMobile">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Phone</td>
-                  <td class="col-val" id="scPhone">-</td>
-                  <td class="col-lbl">Email</td>
-                  <td class="col-val" id="scEmail">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">TIN</td>
-                  <td class="col-val" id="scTin">-</td>
-                  <td class="col-lbl">Driving</td>
-                  <td class="col-val" id="scDriving">-</td>
-                </tr>
-                <tr>
-                  <td class="col-lbl">Passport</td>
-                  <td class="col-val" id="scPassport">-</td>
-                  <td class="col-lbl">No Finger / Print</td>
-                  <td class="col-val" id="scFinger">-</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
         </div>
 
       </div>
 
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       EXACT ORIGINAL NID PDF DISPLAY MODAL (CANVAS HD VIEWER)
+       ===================================================================== -->
+  <div id="pdfDashboardModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 850px; padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #0088cc; padding-bottom: 10px;">
+        <h2 style="margin: 0; color: #0088cc;"><i class="fa-solid fa-address-card"></i> NID Dashboard</h2>
+        <button type="button" class="btn-close" id="closePdfDashboardBtn" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #f8f9fa; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+        <div><strong><i class="fa-solid fa-id-badge"></i> NID ID Number:</strong> <span id="dashNidNo"></span></div>
+        <div><strong><i class="fa-solid fa-user"></i> Name:</strong> <span id="dashName"></span></div>
+        <div><strong><i class="fa-solid fa-calendar-days"></i> Date of Birth:</strong> <span id="dashDob"></span></div>
+        <div><strong><i class="fa-solid fa-clock"></i> Time:</strong> <span id="dashTime"></span></div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+        <button type="button" id="downloadExactPdfBtn" class="btn-primary-download" style="background-color: #059669; padding: 8px 16px; font-size: 0.95rem;">
+          <i class="fa-solid fa-download"></i> অরিজিনাল PDF ডাউনলোড
+        </button>
+        <button type="button" id="openPdfNewTabBtn" class="btn-primary-download" style="background-color: #0284c7; padding: 8px 16px; font-size: 0.95rem;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> নতুন ট্যাবে খুলুন
+        </button>
+        <button type="button" id="printIdBtn" class="btn-primary-download" style="background-color: #0088cc; padding: 8px 16px; font-size: 0.95rem;">
+          <i class="fa-solid fa-print"></i> Print ID
+        </button>
+      </div>
+
+      <div id="printArea" style="text-align: center; margin-bottom: 15px;">
+        <h3 style="margin-bottom: 12px; color: #1e3a8a; font-weight: 700; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> NID PDF (Exact Original File)
+        </h3>
+        <div id="dashPdfFrameContainer" style="width: 100%; min-height: 450px; border-radius: 8px; overflow-y: auto; background: #f8fafc; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; color: #64748b; gap: 12px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.2rem; color: #0088cc;"></i>
+            <span style="font-size: 1rem; font-weight: 500;">অরিজিনাল NID PDF লোড হচ্ছে...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       SAVED NID LIST / DASHBOARD MODAL
+       ===================================================================== -->
+  <div id="dashboardModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 1050px;">
+      <div class="modal-header" style="background-color: #1e3a8a; justify-content: center; position: relative;">
+        <div class="modal-title" style="color: white; font-weight: bold; font-size: 1.2rem;">
+          <i class="fa-solid fa-id-card-clip"></i> আইডি কার্ড লিস্ট
+        </div>
+        <button type="button" class="btn-close" id="closeDashboardBtn" style="position: absolute; right: 20px; color: white; background: none; border: none; font-size: 1.6rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="background-color: #f8fafc; padding: 20px;">
+        
+        <!-- Controls Bar -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <select id="listLimit" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; font-weight: 600; cursor: pointer;">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span style="color: #475569; font-size: 0.9rem;">টি দেখুন</span>
+            </div>
+            
+            <button type="button" id="deleteSelectedBtn" style="padding: 6px 12px; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: none;">
+              <i class="fa-solid fa-trash-can"></i> নির্বাচিত মুছুন (<span id="selectedCount">0</span>)
+            </button>
+            <button type="button" id="clearAllRecordsBtn" style="padding: 6px 12px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+              <i class="fa-solid fa-broom"></i> সব খালি করুন
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div style="position: relative; display: flex; align-items: center;">
+              <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; color: #94a3b8;"></i>
+              <input type="text" id="searchNid" placeholder="আইডি বা নাম দিয়ে খুঁজুন..." style="padding: 7px 12px 7px 32px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; outline: none; min-width: 220px; font-family: var(--font-bn);">
+            </div>
+            <button type="button" id="loadSampleDataBtn" style="padding: 7px 12px; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" title="পরীক্ষার জন্য নমুনা ডাটা লোড">
+              <i class="fa-solid fa-plus"></i> নমুনা ডাটা
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div style="overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
+          <table style="width: 100%; border-collapse: collapse; text-align: center; min-width: 800px;">
+            <thead>
+              <tr style="background-color: #1e3a8a; color: white; font-size: 0.9rem;">
+                <th style="padding: 12px; width: 40px;"><input type="checkbox" id="selectAll" style="cursor: pointer;"></th>
+                <th style="padding: 12px;"><i class="fa-solid fa-id-card"></i> আইডি নং</th>
+                <th style="padding: 12px;"><i class="fa-solid fa-user"></i> নাম</th>
+                <th style="padding: 12px;"><i class="fa-solid fa-cake-candles"></i> জন্ম তারিখ</th>
+                <th style="padding: 12px;"><i class="fa-solid fa-gear"></i> একশন</th>
+                <th style="padding: 12px;"><i class="fa-solid fa-clock"></i> সময়</th>
+              </tr>
+            </thead>
+            <tbody id="nidTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; flex-wrap: wrap; gap: 10px;">
+          <div style="color: #64748b; font-size: 0.88rem;" id="paginationInfo">
+            ১ থেকে ০ (মোট ০)
+          </div>
+          <div style="display: flex; gap: 6px;" id="paginationControls">
+            <!-- Dynamic page buttons will be populated here -->
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
