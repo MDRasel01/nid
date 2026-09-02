@@ -190,32 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const generatePdfBtn = document.getElementById('generatePdfBtn');
   const listBtn = document.getElementById('listBtn');
 
-  // Smart Card Modal Elements
-  const cardModal = document.getElementById('cardModal');
-  const closeModalBtn = document.getElementById('closeModalBtn');
-  const modalYearLabel = document.getElementById('modalYearLabel');
-  const exportPdfBtn = document.getElementById('exportPdfBtn');
-  const exportPngBtn = document.getElementById('exportPngBtn');
-  const printCardBtn = document.getElementById('printCardBtn');
 
-  // Smart Card Display Fields
-  const cardPhotoImg = document.getElementById('cardPhotoImg');
-  const cardPhotoFallback = document.getElementById('cardPhotoFallback');
-  const cardSignImg = document.getElementById('cardSignImg');
-  const cardSignFallback = document.getElementById('cardSignFallback');
-  const cNameBn = document.getElementById('cNameBn');
-  const cNameEn = document.getElementById('cNameEn');
-  const cFather = document.getElementById('cFather');
-  const cMother = document.getElementById('cMother');
-  const cDob = document.getElementById('cDob');
-  const cNidNo = document.getElementById('cNidNo');
-  const cAddress = document.getElementById('cAddress');
-  const cBloodGroup = document.getElementById('cBloodGroup');
-  const cPob = document.getElementById('cPob');
-  const cIssueDate = document.getElementById('cIssueDate');
-  const cardBarcode = document.getElementById('cardBarcode');
-  const cardQrCode = document.getElementById('cardQrCode');
-  const cMrzLines = document.getElementById('cMrzLines');
 
   // Exact NID PDF Viewer Modal Elements
   const pdfDashboardModal = document.getElementById('pdfDashboardModal');
@@ -223,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashNidNo = document.getElementById('dashNidNo');
   const dashName = document.getElementById('dashName');
   const dashDob = document.getElementById('dashDob');
+  const dashFileName = document.getElementById('dashFileName');
   const dashTime = document.getElementById('dashTime');
   const downloadExactPdfBtn = document.getElementById('downloadExactPdfBtn');
   const openPdfNewTabBtn = document.getElementById('openPdfNewTabBtn');
@@ -247,292 +223,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUploadedPhotoData = '';
   let currentUploadedSignData = '';
   let currentExactNidPdfBlob = null;
+  let currentPdfFileName = '';
   let currentSelectedYear = 'NEW';
   let activeModalRecord = null;
   let dashboardCurrentPage = 1;
   let selectedRecordIds = new Set();
 
-  // ----------------------------------------------------
-  // Dynamic Form Field Detection Engine
-  // Detects all predefined fields, labels, and order directly from #nidForm
-  // ----------------------------------------------------
-  function detectFormStructure() {
-    const fields = [
-      { id: 'nidNo', label: 'আইডি নাম্বার', key: 'nidNo', type: 'text', col: 'left' },
-      { id: 'nameBn', label: 'নাম (বাংলা)', key: 'nameBn', type: 'text', col: 'left' },
-      { id: 'dob', label: 'জন্ম তারিখ', key: 'dob', type: 'text', col: 'left' },
-      { id: 'fatherName', label: 'পিতার নাম', key: 'fatherName', type: 'text', col: 'left' },
-      { id: 'bloodGroup', label: 'রক্তের গ্রুপ', key: 'bloodGroup', type: 'text', col: 'left' },
-      { id: 'idIdentify', label: 'আইডি সনাক্ত', key: 'idIdentify', type: 'text', col: 'right' },
-      { id: 'pinNo', label: 'পিন নাম্বার', key: 'pinNo', type: 'text', col: 'right' },
-      { id: 'nameEn', label: 'নাম (ইংরেজি)', key: 'nameEn', type: 'text', col: 'right' },
-      { id: 'pob', label: 'জন্মস্থান', key: 'pob', type: 'text', col: 'right' },
-      { id: 'motherName', label: 'মাতার নাম', key: 'motherName', type: 'text', col: 'right' },
-      { id: 'issueDate', label: 'ইস্যু তারিখ', key: 'issueDate', type: 'text', col: 'right' },
-      { id: 'address', label: 'ঠিকানা', key: 'address', type: 'textarea', col: 'full' }
-    ];
 
-    // Read live labels from DOM to be 100% dynamic
-    fields.forEach(f => {
-      const groupEl = document.getElementById(`group-${f.id}`);
-      if (groupEl) {
-        const labelEl = groupEl.querySelector('.field-label');
-        if (labelEl) {
-          const text = labelEl.textContent.trim().replace(/^[\s﻿ ]+|[\s﻿ ]+$/g, '');
-          if (text) f.label = text;
-        }
-      }
-    });
-
-    return fields;
-  }
-
-  // ----------------------------------------------------
-  // COMPLETE DYNAMIC FORM-TO-PDF GENERATION SYSTEM
-  // ----------------------------------------------------
-  async function generateAndDownloadOfficialPdf(record, buttonElement = null) {
-    if (!record) return;
-
-    if (!window.html2canvas || !window.jspdf) {
-      alert('PDF লাইব্রেরি প্রস্তুত নয়! অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করুন।');
-      return;
-    }
-
-    let originalBtnHtml = '';
-    if (buttonElement) {
-      originalBtnHtml = buttonElement.innerHTML;
-      buttonElement.disabled = true;
-      buttonElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> PDF তৈরি হচ্ছে...';
-    }
-
-    try {
-      const renderContainer = document.getElementById('dynamicPdfRenderContainer');
-      if (!renderContainer) return;
-
-      const fields = detectFormStructure();
-      const nidVal = record.nidNo || '-';
-      const pinVal = record.pinNo || '-';
-      const nameEnVal = record.nameEn || '-';
-      const dobVal = record.dob || '-';
-      const addressVal = record.address || '-';
-
-      const leftFields = fields.filter(f => f.col === 'left');
-      const rightFields = fields.filter(f => f.col === 'right');
-
-      // Build High-Resolution Official Document Layout
-      renderContainer.innerHTML = `
-        <div id="pdfExportDoc" style="width: 794px; min-height: 1123px; padding: 40px; background: #ffffff; color: #1e293b; font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif; position: relative; box-sizing: border-box;">
-          
-          <!-- Outer Decorative Border -->
-          <div style="border: 2.5px solid #006a4e; border-radius: 8px; padding: 24px; min-height: 1040px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
-            
-            <!-- Watermark Emblem in Background -->
-            <div style="position: absolute; top: 50%; left: 50%; width: 280px; height: 280px; transform: translate(-50%, -50%); opacity: 0.05; pointer-events: none; z-index: 0;">
-              <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                <circle cx="50" cy="50" r="45" fill="#006A4E"/>
-                <circle cx="50" cy="50" r="26" fill="#DA291C"/>
-              </svg>
-            </div>
-
-            <div style="position: relative; z-index: 1;">
-              
-              <!-- 1. Government Emblem & Header -->
-              <div style="display: flex; align-items: center; justify-content: center; gap: 16px; border-bottom: 2px solid #006a4e; padding-bottom: 14px; margin-bottom: 20px; text-align: center;">
-                <div style="width: 54px; height: 54px; flex-shrink: 0;">
-                  <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                    <circle cx="50" cy="50" r="45" fill="#006A4E" stroke="#DA291C" stroke-width="4"/>
-                    <circle cx="50" cy="50" r="26" fill="#DA291C"/>
-                    <path d="M50 20 L53 32 L65 32 L55 40 L59 52 L50 44 L41 52 L45 40 L35 32 L47 32 Z" fill="#FFD700"/>
-                    <path d="M22 62 Q35 75 50 78 Q65 75 78 62" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
-                  </svg>
-                </div>
-                <div>
-                  <h1 style="font-size: 1.5rem; color: #006a4e; margin: 0; font-weight: 700; line-height: 1.2;">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</h1>
-                  <h2 style="font-size: 0.95rem; color: #334155; margin: 2px 0 0 0; font-family: 'Inter', sans-serif; font-weight: 600;">Government of the People's Republic of Bangladesh</h2>
-                  <div style="display: inline-block; background: #006a4e; color: #ffffff; font-size: 0.92rem; font-weight: bold; padding: 3px 18px; border-radius: 20px; margin-top: 6px;">
-                    জাতীয় পরিচয়পত্র তথ্য বিবরণী / National ID Record Sheet
-                  </div>
-                </div>
-              </div>
-
-              <!-- 2. Photo, Signature & Verification Identity Section -->
-              <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px;">
-                
-                <!-- Photo & Sign -->
-                <div style="display: flex; gap: 14px; align-items: center;">
-                  <div style="width: 85px; height: 102px; border: 1.5px solid #94a3b8; border-radius: 4px; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
-                    ${record.photo ? `<img src="${record.photo}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div style="font-size: 2rem; color: #cbd5e1;"><i class="fa-solid fa-user"></i></div>`}
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="width: 85px; height: 32px; border: 1px dashed #cbd5e1; border-radius: 4px; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                      ${record.sign ? `<img src="${record.sign}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` : `<span style="font-size: 0.65rem; color: #94a3b8;">স্বাক্ষর</span>`}
-                    </div>
-                    <span style="font-size: 0.72rem; color: #64748b; text-align: center;">ছবি ও স্বাক্ষর</span>
-                  </div>
-                </div>
-
-                <!-- Barcode & QR Verification -->
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                  <svg id="pdfDocBarcode" style="height: 38px;"></svg>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <div id="pdfDocQrCode" style="width: 45px; height: 45px; background: #ffffff; padding: 2px; border: 1px solid #cbd5e1; border-radius: 3px;"></div>
-                    <div style="font-size: 0.75rem; color: #475569; text-align: left; line-height: 1.2;">
-                      <div><strong>NID:</strong> ${nidVal}</div>
-                      <div><strong>PIN:</strong> ${pinVal}</div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- 3. Dynamic Form Field Table Structure -->
-              <div style="margin-bottom: 20px;">
-                <h3 style="font-size: 1.05rem; color: #1e3a8a; font-weight: 700; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px; margin-bottom: 12px;">
-                  ব্যক্তিগত ও পরিচিতি তথ্য (Personal Identification Details)
-                </h3>
-
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
-                  <tbody>
-                    ${Array.from({ length: Math.max(leftFields.length, rightFields.length) }).map((_, i) => {
-                      const lf = leftFields[i];
-                      const rf = rightFields[i];
-                      const lVal = lf ? (record[lf.key] || '-') : '';
-                      const rVal = rf ? (record[rf.key] || '-') : '';
-
-                      return `
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                          <!-- Left Column Field -->
-                          <td style="padding: 9px 12px; background: #f8fafc; font-weight: 600; color: #334155; width: 22%; border-right: 1px solid #e2e8f0;">
-                            ${lf ? lf.label : ''}
-                          </td>
-                          <td style="padding: 9px 12px; color: #0f172a; font-weight: ${lf && (lf.key === 'nidNo' || lf.key === 'dob' || lf.key === 'bloodGroup') ? '700' : '500'}; color: ${lf && lf.key === 'nidNo' ? '#b91c1c' : (lf && lf.key === 'dob' ? '#dc2626' : '#0f172a')}; width: 28%; border-right: 1px solid #e2e8f0;">
-                            ${lVal}
-                          </td>
-
-                          <!-- Right Column Field -->
-                          <td style="padding: 9px 12px; background: #f8fafc; font-weight: 600; color: #334155; width: 22%; border-right: 1px solid #e2e8f0;">
-                            ${rf ? rf.label : ''}
-                          </td>
-                          <td style="padding: 9px 12px; color: #0f172a; font-weight: 500; width: 28%;">
-                            ${rVal}
-                          </td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- 4. Full Width Address Section -->
-              <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; margin-bottom: 20px;">
-                <div style="font-size: 0.95rem; font-weight: 700; color: #1e3a8a; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-map-location-dot"></i> ঠিকানা (Address)
-                </div>
-                <div style="font-size: 0.95rem; line-height: 1.5; color: #0f172a; padding: 8px 12px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; word-break: break-word;">
-                  ${addressVal}
-                </div>
-              </div>
-
-            </div>
-
-            <!-- 5. Document Footer & Verification Notice -->
-            <div style="position: relative; z-index: 1; border-top: 1.5px solid #006a4e; padding-top: 14px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.82rem; color: #64748b;">
-              <div>
-                <div><strong>ইস্যু সিস্টেম:</strong> বাংলাদেশ জাতীয় পরিচয়পত্র ডাটাবেজ</div>
-                <div><strong>ডকুমেন্ট প্রিন্ট সময়:</strong> ${new Date().toLocaleString('bn-BD', { hour12: true })}</div>
-                <div style="color: #059669; font-weight: 600; margin-top: 2px;">✓ ডিজিটাল ভেরিফাইড ও প্রামাণিক কপি</div>
-              </div>
-
-              <div style="text-align: center;">
-                <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">SECURE-HASH-${Math.random().toString(36).substring(2, 10).toUpperCase()}</div>
-                <div style="border-top: 1px solid #94a3b8; width: 140px; padding-top: 2px; font-weight: 600; color: #334155;">কর্তৃপক্ষের স্বাক্ষর</div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      `;
-
-      // Render Barcode
-      try {
-        if (window.JsBarcode) {
-          const bEl = document.getElementById('pdfDocBarcode');
-          if (bEl) {
-            JsBarcode(bEl, pinVal !== '-' ? pinVal : (nidVal !== '-' ? nidVal : '1234567890'), {
-              format: 'CODE128',
-              lineColor: '#1e293b',
-              width: 1.4,
-              height: 32,
-              displayValue: false,
-              margin: 0
-            });
-          }
-        }
-      } catch (e) {
-        console.warn('Barcode notice:', e);
-      }
-
-      // Render QR Code
-      try {
-        if (window.QRCode) {
-          const qrEl = document.getElementById('pdfDocQrCode');
-          if (qrEl) {
-            qrEl.innerHTML = '';
-            new QRCode(qrEl, {
-              text: `<NID>${nidVal}</NID><PIN>${pinVal}</PIN><NAME>${nameEnVal}</NAME><DOB>${dobVal}</DOB>`,
-              width: 41,
-              height: 41,
-              colorDark: '#000000',
-              colorLight: '#ffffff',
-              correctLevel: QRCode.CorrectLevel.M
-            });
-          }
-        }
-      } catch (e) {
-        console.warn('QR notice:', e);
-      }
-
-      // Small delay for DOM and fonts to settle
-      await new Promise(r => setTimeout(r, 150));
-
-      const docElement = document.getElementById('pdfExportDoc');
-      const canvas = await html2canvas(docElement, {
-        scale: 2.5,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = pdfWidth - 20; // 10mm margins left and right
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, 'JPEG', 10, 15, imgWidth, imgHeight);
-      pdf.save(`NID_${record.nidNo || record.id}.pdf`);
-
-      renderContainer.innerHTML = '';
-
-    } catch (err) {
-      console.error('PDF generation error:', err);
-      alert('PDF তৈরি করতে সমস্যা হয়েছে: ' + err.message);
-    } finally {
-      if (buttonElement && originalBtnHtml) {
-        buttonElement.disabled = false;
-        buttonElement.innerHTML = originalBtnHtml;
-      }
-    }
-  }
 
   // ----------------------------------------------------
   // Year Tab Navigation
@@ -543,7 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tabButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentSelectedYear = btn.getAttribute('data-year') || 'NEW';
-      if (modalYearLabel) modalYearLabel.textContent = currentSelectedYear + ' Format';
     });
   });
 
@@ -627,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
       clearPhotoData();
       clearSignData();
       currentExactNidPdfBlob = null;
+      currentPdfFileName = '';
       if (gbBadge) gbBadge.classList.add('hidden');
       if (nidBadge) nidBadge.classList.add('hidden');
       if (parseStatusAlert) parseStatusAlert.classList.add('hidden');
@@ -762,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     currentExactNidPdfBlob = file;
+    currentPdfFileName = file.name || 'document.pdf';
 
     if (uploadType === 'nid') {
       if (nidBadge && nidBadgeText) {
@@ -1083,6 +781,7 @@ document.addEventListener('DOMContentLoaded', () => {
       photo: currentUploadedPhotoData || '',
       sign: currentUploadedSignData || '',
       exactPdf: currentExactNidPdfBlob || null,
+      pdfFileName: currentPdfFileName || `NID_${currentNid}.pdf`,
       yearFormat: currentSelectedYear || 'NEW',
       createdAt: new Date().toLocaleString('bn-BD', { hour12: true })
     };
@@ -1091,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (parseStatusAlert) {
       parseStatusAlert.className = 'parse-alert success';
-      parseStatusAlert.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>সফলভাবে সংরক্ষিত!</strong> আইডি কার্ড ডাটাবেজে সেভ হয়েছে।`;
+      parseStatusAlert.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>সফলভাবে সংরক্ষিত!</strong> আইডি কার্ড ও মূল PDF ডাটাবেজে সেভ হয়েছে।`;
       parseStatusAlert.classList.remove('hidden');
     }
 
@@ -1108,204 +807,69 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ============================================================================
-  // 5. NID Smart Card Preview & Generator (Front & Back)
+  // 5. Original PDF Download & Form Preview Actions
   // ============================================================================
+  function downloadOriginalPdf(record, buttonElement = null) {
+    if (!record || !record.exactPdf) {
+      alert('এই রেকর্ডের জন্য কোনো মূল আপলোডকৃত PDF ফাইল সংরক্ষিত নেই।');
+      return;
+    }
+
+    let originalBtnHtml = '';
+    if (buttonElement) {
+      originalBtnHtml = buttonElement.innerHTML;
+      buttonElement.disabled = true;
+      buttonElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ডাউনলোড হচ্ছে...';
+    }
+
+    try {
+      const blob = record.exactPdf instanceof Blob 
+        ? record.exactPdf 
+        : new Blob([record.exactPdf], { type: 'application/pdf' });
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = record.pdfFileName || `NID_${record.nidNo || record.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('PDF ডাউনলোড করতে সমস্যা হয়েছে: ' + err.message);
+    } finally {
+      if (buttonElement && originalBtnHtml) {
+        buttonElement.disabled = false;
+        buttonElement.innerHTML = originalBtnHtml;
+      }
+    }
+  }
+
+  // Main Form Preview Button (Previews currently uploaded PDF)
   if (generatePdfBtn) {
     generatePdfBtn.addEventListener('click', () => {
-      populateSmartCard();
-      if (cardModal) cardModal.classList.remove('hidden');
-    });
-  }
-
-  if (closeModalBtn && cardModal) {
-    closeModalBtn.addEventListener('click', () => {
-      cardModal.classList.add('hidden');
-    });
-  }
-
-  function populateSmartCard(customRecord = null) {
-    const data = customRecord || {
-      nidNo: val('nidNo', '-'),
-      nameBn: val('nameBn', '-'),
-      nameEn: val('nameEn', '-'),
-      dob: val('dob', '-'),
-      pob: val('pob', '-'),
-      fatherName: val('fatherName', '-'),
-      motherName: val('motherName', '-'),
-      bloodGroup: val('bloodGroup', '-'),
-      idIdentify: val('idIdentify', '-'),
-      issueDate: val('issueDate', '-'),
-      address: val('address', '-'),
-      photo: currentUploadedPhotoData,
-      sign: currentUploadedSignData
-    };
-
-    if (cNameBn) cNameBn.textContent = data.nameBn || '-';
-    if (cNameEn) cNameEn.textContent = data.nameEn || '-';
-    if (cFather) cFather.textContent = data.fatherName || '-';
-    if (cMother) cMother.textContent = data.motherName || '-';
-    if (cDob) cDob.textContent = data.dob || '-';
-    if (cNidNo) cNidNo.textContent = data.nidNo || '-';
-    
-    if (cAddress) cAddress.textContent = data.address || '-';
-    if (cBloodGroup) cBloodGroup.textContent = data.bloodGroup || '-';
-    if (cPob) cPob.textContent = data.pob || '-';
-    if (cIssueDate) cIssueDate.textContent = data.issueDate || '-';
-
-    // Photo
-    if (data.photo && cardPhotoImg) {
-      cardPhotoImg.src = data.photo;
-      cardPhotoImg.style.display = 'block';
-      if (cardPhotoFallback) cardPhotoFallback.style.display = 'none';
-    } else if (cardPhotoImg) {
-      cardPhotoImg.style.display = 'none';
-      if (cardPhotoFallback) cardPhotoFallback.style.display = 'flex';
-    }
-
-    // Signature
-    if (data.sign && cardSignImg) {
-      cardSignImg.src = data.sign;
-      cardSignImg.style.display = 'block';
-      if (cardSignFallback) cardSignFallback.style.display = 'none';
-    } else if (cardSignImg) {
-      cardSignImg.style.display = 'none';
-      if (cardSignFallback) cardSignFallback.style.display = 'block';
-    }
-
-    // Barcode
-    try {
-      if (window.JsBarcode && cardBarcode) {
-        JsBarcode(cardBarcode, data.nidNo !== '-' ? data.nidNo : '1234567890', {
-          format: 'CODE128',
-          lineColor: '#1e293b',
-          width: 1.4,
-          height: 34,
-          displayValue: false,
-          margin: 0
-        });
+      if (!currentExactNidPdfBlob) {
+        alert('অনুগ্রহ করে প্রথমে একটি NID PDF ফাইল আপলোড করুন!');
+        return;
       }
-    } catch (e) {
-      console.warn('Barcode notice:', e);
-    }
-
-    // QR Code
-    try {
-      if (window.QRCode && cardQrCode) {
-        cardQrCode.innerHTML = '';
-        new QRCode(cardQrCode, {
-          text: `<NID>${data.nidNo}</NID><NAME>${data.nameEn}</NAME><DOB>${data.dob}</DOB>`,
-          width: 38,
-          height: 38,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      }
-    } catch (e) {
-      console.warn('QR code notice:', e);
-    }
-
-    // MRZ Lines
-    if (cMrzLines) {
-      const nidFormatted = (data.nidNo || '').padEnd(17, '<').substring(0, 17);
-      const nameFormatted = (data.nameEn || '').toUpperCase().replace(/[^A-Z]/g, '<').padEnd(30, '<').substring(0, 30);
-      cMrzLines.innerHTML = `
-        I&lt;BGD${nidFormatted}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0<br>
-        0000000M0000000BGD&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0<br>
-        ${nameFormatted}
-      `;
-    }
-  }
-
-  // Export Smart Card PDF
-  if (exportPdfBtn) {
-    exportPdfBtn.addEventListener('click', async () => {
-      const cardArea = document.getElementById('printableCardArea');
-      if (!cardArea || !window.html2canvas || !window.jspdf) return;
-
-      const currentNid = val('nidNo', 'SmartCard');
-      exportPdfBtn.disabled = true;
-      exportPdfBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> তৈরি হচ্ছে...';
-
-      try {
-        const canvas = await html2canvas(cardArea, {
-          scale: 2.5,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff'
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'mm',
-          format: 'a4'
-        });
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        
-        const imgWidth = pageWidth - 40;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        const posX = 20;
-        const posY = (pageHeight - imgHeight) / 2;
-
-        pdf.addImage(imgData, 'JPEG', posX, posY, imgWidth, imgHeight);
-        pdf.save(`NID_Card_${currentNid}.pdf`);
-
-      } catch (err) {
-        alert('PDF তৈরি সমস্যা: ' + err.message);
-      } finally {
-        exportPdfBtn.disabled = false;
-        exportPdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> PDF ডাউনলোড';
-      }
-    });
-  }
-
-  // Export PNG
-  if (exportPngBtn) {
-    exportPngBtn.addEventListener('click', async () => {
-      const cardArea = document.getElementById('printableCardArea');
-      if (!cardArea || !window.html2canvas) return;
-
-      const currentNid = val('nidNo', 'SmartCard');
-      exportPngBtn.disabled = true;
-      exportPngBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> প্রসেস হচ্ছে...';
-
-      try {
-        const canvas = await html2canvas(cardArea, {
-          scale: 2.5,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-
-        const image = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = image;
-        link.download = `NID_Card_${currentNid}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (e) {
-        alert('ছবি ডাউনলোড সমস্যা: ' + e.message);
-      } finally {
-        exportPngBtn.disabled = false;
-        exportPngBtn.innerHTML = '<i class="fa-solid fa-image"></i> ইমেজ ডাউনলোড (PNG)';
-      }
-    });
-  }
-
-  // Print Smart Card
-  if (printCardBtn) {
-    printCardBtn.addEventListener('click', () => {
-      window.print();
+      const tempRecord = {
+        id: Date.now(),
+        nidNo: val('nidNo', '-'),
+        pinNo: val('pinNo', '-'),
+        nameBn: val('nameBn', '-'),
+        nameEn: val('nameEn', '-'),
+        dob: val('dob', '-'),
+        exactPdf: currentExactNidPdfBlob,
+        pdfFileName: currentPdfFileName || 'Uploaded_NID.pdf',
+        createdAt: new Date().toLocaleString('bn-BD', { hour12: true })
+      };
+      openExactNidPdfViewer(tempRecord);
     });
   }
 
   // ============================================================================
-  // 6. EXACT ORIGINAL NID PDF CANVAS VIEWER MODAL
+  // 6. EXACT ORIGINAL NID PDF VIEWER MODAL (LOSSLESS PDF DISPLAY)
   // ============================================================================
   if (closePdfDashboardBtn && pdfDashboardModal) {
     closePdfDashboardBtn.addEventListener('click', () => {
@@ -1314,18 +878,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function openExactNidPdfViewer(record) {
+    if (!record) return;
     activeModalRecord = record;
 
     if (dashNidNo) dashNidNo.textContent = record.nidNo || '-';
     if (dashName) dashName.textContent = record.nameBn || record.nameEn || '-';
     if (dashDob) dashDob.textContent = record.dob || '-';
+    if (dashFileName) dashFileName.textContent = record.pdfFileName || (record.exactPdf ? 'NID_Document.pdf' : 'ফাইল নেই');
     if (dashTime) dashTime.textContent = record.createdAt || new Date().toLocaleString('bn-BD');
 
     if (dashPdfFrameContainer) {
       dashPdfFrameContainer.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; color: #64748b; gap: 12px;">
           <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.2rem; color: #0088cc;"></i>
-          <span style="font-size: 1rem; font-weight: 500;">NID PDF লোড হচ্ছে...</span>
+          <span style="font-size: 1rem; font-weight: 500;">মূল NID PDF লোড হচ্ছে...</span>
         </div>
       `;
     }
@@ -1334,75 +900,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (record.exactPdf && window.pdfjsLib) {
       try {
-        const arrayBuffer = await record.exactPdf.arrayBuffer();
+        let arrayBuffer;
+        if (record.exactPdf instanceof Blob) {
+          arrayBuffer = await record.exactPdf.arrayBuffer();
+        } else if (record.exactPdf instanceof ArrayBuffer) {
+          arrayBuffer = record.exactPdf;
+        } else {
+          arrayBuffer = await new Blob([record.exactPdf], { type: 'application/pdf' }).arrayBuffer();
+        }
+
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         dashPdfFrameContainer.innerHTML = '';
 
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1.5 });
+          const viewport = page.getViewport({ scale: 1.8 });
+
+          const pageWrapper = document.createElement('div');
+          pageWrapper.style.cssText = 'margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 800px;';
+
+          if (pdf.numPages > 1) {
+            const pageLabel = document.createElement('div');
+            pageLabel.style.cssText = 'font-size: 0.82rem; color: #64748b; margin-bottom: 6px; font-weight: 600; background: #e2e8f0; padding: 2px 10px; border-radius: 12px;';
+            pageLabel.textContent = `পৃষ্ঠা ${i} / ${pdf.numPages}`;
+            pageWrapper.appendChild(pageLabel);
+          }
 
           const canvas = document.createElement('canvas');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           canvas.style.maxWidth = '100%';
           canvas.style.height = 'auto';
-          canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
-          canvas.style.borderRadius = '4px';
-          canvas.style.marginBottom = '16px';
+          canvas.style.boxShadow = '0 3px 12px rgba(0,0,0,0.12)';
+          canvas.style.borderRadius = '6px';
           canvas.style.background = '#ffffff';
 
           const ctx = canvas.getContext('2d');
           await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-          dashPdfFrameContainer.appendChild(canvas);
+          pageWrapper.appendChild(canvas);
+
+          dashPdfFrameContainer.appendChild(pageWrapper);
         }
       } catch (err) {
         console.error('PDF render error:', err);
-        renderGeneratedDocumentFallback(record);
+        dashPdfFrameContainer.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: #ef4444;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <p style="font-weight: 600;">PDF রেন্ডার করতে সমস্যা হয়েছে: ${err.message}</p>
+          </div>
+        `;
       }
     } else {
-      renderGeneratedDocumentFallback(record);
+      dashPdfFrameContainer.innerHTML = `
+        <div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 36px 20px; text-align: center; max-width: 550px; margin: 40px auto;">
+          <i class="fa-solid fa-file-circle-xmark" style="font-size: 3rem; color: #94a3b8; margin-bottom: 14px;"></i>
+          <h3 style="color: #334155; margin-bottom: 8px; font-size: 1.15rem;">কোনো মূল NID PDF ফাইল পাওয়া যায়নি</h3>
+          <p style="color: #64748b; font-size: 0.92rem; line-height: 1.5;">
+            এই রেকর্ডটির সাথে কোনো মূল NID PDF ফাইল সংযুক্ত নেই। মূল PDF ফাইল আপলোড করে সেভ করলে এখানে হুবহু সেই PDF ফাইলটি প্রিভিউ হিসেবে প্রদর্শিত হবে।
+          </p>
+        </div>
+      `;
     }
   }
 
-  function renderGeneratedDocumentFallback(record) {
-    if (!dashPdfFrameContainer) return;
-    dashPdfFrameContainer.innerHTML = `
-      <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 24px; max-width: 700px; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: left; font-family: var(--font-bn);">
-        <div style="text-align: center; border-bottom: 2px solid #006a4e; padding-bottom: 12px; margin-bottom: 16px;">
-          <h3 style="color: #006a4e; margin: 0; font-size: 1.3rem;">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</h3>
-          <p style="color: #475569; margin: 4px 0 0 0; font-size: 0.9rem;">জাতীয় পরিচয়পত্র তথ্য বিবরণী</p>
-        </div>
-
-        <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: center;">
-          <div style="width: 90px; height: 110px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
-            ${record.photo ? `<img src="${record.photo}" style="width: 100%; height: 100%; object-fit: cover;">` : `<i class="fa-solid fa-user" style="font-size: 2.5rem; color: #94a3b8;"></i>`}
-          </div>
-          <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9rem;">
-            <div><strong>আইডি নাম্বার:</strong> <span style="color: #b91c1c; font-weight: bold;">${record.nidNo || '-'}</span></div>
-            <div><strong>পিন নাম্বার:</strong> <span>${record.pinNo || '-'}</span></div>
-            <div><strong>নাম (বাংলা):</strong> <span style="font-weight: bold;">${record.nameBn || '-'}</span></div>
-            <div><strong>নাম (ইংরেজি):</strong> <span>${record.nameEn || '-'}</span></div>
-            <div><strong>জন্ম তারিখ:</strong> <span style="color: #dc2626; font-weight: bold;">${record.dob || '-'}</span></div>
-            <div><strong>জন্মস্থান:</strong> <span>${record.pob || '-'}</span></div>
-            <div><strong>পিতার নাম:</strong> <span>${record.fatherName || '-'}</span></div>
-            <div><strong>মাতার নাম:</strong> <span>${record.motherName || '-'}</span></div>
-            <div><strong>রক্তের গ্রুপ:</strong> <span style="color: #b91c1c; font-weight: bold;">${record.bloodGroup || '-'}</span></div>
-            <div><strong>ইস্যু তারিখ:</strong> <span>${record.issueDate || '-'}</span></div>
-          </div>
-        </div>
-
-        <div style="border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 0.9rem;">
-          <strong>ঠিকানা:</strong> <span>${record.address || '-'}</span>
-        </div>
-      </div>
-    `;
-  }
-
   if (downloadExactPdfBtn) {
-    downloadExactPdfBtn.addEventListener('click', async () => {
+    downloadExactPdfBtn.addEventListener('click', () => {
       if (activeModalRecord) {
-        await generateAndDownloadOfficialPdf(activeModalRecord, downloadExactPdfBtn);
+        downloadOriginalPdf(activeModalRecord, downloadExactPdfBtn);
       }
     });
   }
@@ -1410,28 +974,41 @@ document.addEventListener('DOMContentLoaded', () => {
   if (openPdfNewTabBtn) {
     openPdfNewTabBtn.addEventListener('click', () => {
       if (activeModalRecord && activeModalRecord.exactPdf) {
-        const url = URL.createObjectURL(activeModalRecord.exactPdf);
+        const blob = activeModalRecord.exactPdf instanceof Blob 
+          ? activeModalRecord.exactPdf 
+          : new Blob([activeModalRecord.exactPdf], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
       } else {
-        alert('অরিজিনাল PDF ফাইল সংরক্ষিত নেই।');
+        alert('এই রেকর্ডের জন্য কোনো মূল আপলোডকৃত PDF ফাইল সংরক্ষিত নেই।');
       }
     });
   }
 
   if (printIdBtn) {
     printIdBtn.addEventListener('click', () => {
-      window.print();
+      if (activeModalRecord && activeModalRecord.exactPdf) {
+        const blob = activeModalRecord.exactPdf instanceof Blob 
+          ? activeModalRecord.exactPdf 
+          : new Blob([activeModalRecord.exactPdf], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const printWindow = window.open(url, '_blank');
+        if (printWindow) {
+          printWindow.focus();
+        }
+      } else {
+        window.print();
+      }
     });
   }
 
   // ============================================================================
-  // 7. FULLY FUNCTIONAL ID CARD LIST & DYNAMIC PDF DOWNLOAD SYSTEM
+  // 7. FULLY FUNCTIONAL ID CARD LIST & EXACT PDF DOWNLOAD SYSTEM
   // ============================================================================
   if (listBtn) {
     listBtn.addEventListener('click', async () => {
       dashboardCurrentPage = 1;
       selectedRecordIds.clear();
-      await checkAndAddInitialSampleData();
       await renderDashboard();
       if (dashboardModal) dashboardModal.classList.remove('hidden');
     });
@@ -1444,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Close modals on overlay click or Escape key
-  [cardModal, pdfDashboardModal, dashboardModal].forEach(modal => {
+  [pdfDashboardModal, dashboardModal].forEach(modal => {
     if (modal) {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -1456,7 +1033,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (cardModal) cardModal.classList.add('hidden');
       if (pdfDashboardModal) pdfDashboardModal.classList.add('hidden');
       if (dashboardModal) dashboardModal.classList.add('hidden');
     }
@@ -1489,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Batch PDF Download
+  // Batch PDF Download of exact original uploaded files
   if (downloadSelectedPdfBtn) {
     downloadSelectedPdfBtn.addEventListener('click', async () => {
       if (selectedRecordIds.size === 0) return;
@@ -1502,10 +1078,18 @@ document.addEventListener('DOMContentLoaded', () => {
       downloadSelectedPdfBtn.disabled = true;
       downloadSelectedPdfBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ডাউনলোড হচ্ছে...';
 
+      let downloadedCount = 0;
       for (let i = 0; i < selectedRecords.length; i++) {
-        await generateAndDownloadOfficialPdf(selectedRecords[i]);
-        // Short pause between sequential downloads
-        await new Promise(r => setTimeout(r, 400));
+        const rec = selectedRecords[i];
+        if (rec.exactPdf) {
+          downloadOriginalPdf(rec);
+          downloadedCount++;
+          await new Promise(r => setTimeout(r, 400));
+        }
+      }
+
+      if (downloadedCount === 0) {
+        alert('নির্বাচিত রেকর্ডগুলোর জন্য কোনো মূল PDF ফাইল পাওয়া যায়নি।');
       }
 
       downloadSelectedPdfBtn.disabled = false;
@@ -1537,13 +1121,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (loadSampleDataBtn) {
-    loadSampleDataBtn.addEventListener('click', async () => {
-      await addSampleRecord();
-      await renderDashboard();
-    });
-  }
-
   function updateSelectedCount() {
     const count = selectedRecordIds.size;
     if (selectedCountSpan) selectedCountSpan.textContent = count;
@@ -1554,36 +1131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (deleteSelectedBtn) {
       deleteSelectedBtn.style.display = count > 0 ? 'inline-flex' : 'none';
     }
-  }
-
-  async function checkAndAddInitialSampleData() {
-    const records = await NidStorageDB.getAll();
-    if (!records || records.length === 0) {
-      await addSampleRecord();
-    }
-  }
-
-  async function addSampleRecord() {
-    const sample = {
-      id: Date.now(),
-      nidNo: '5093044807',
-      pinNo: '19711515389700272',
-      nameBn: 'মোঃ আবুল কাশেম',
-      nameEn: 'MD ABUL KASHEM',
-      dob: '10 Jan 1985',
-      pob: 'চট্টগ্রাম',
-      fatherName: 'নুরুল আনোয়ার',
-      motherName: 'আয়েশা খাতুন',
-      bloodGroup: 'B+',
-      idIdentify: 'তিল চিহ্ন',
-      issueDate: '13/08/2026',
-      address: 'বাসা/হোল্ডিং: নতুন বাড়ি, গ্রাম/রাস্তা: বড় কমলদহ, ডাকঘর: বারৈয়াঢালা - ৪৩১১, ওয়ার্ড: ৮, ইউনিয়ন: ওয়াহেদপুর, উপজেলা: মীরসরাই, জেলা: চট্টগ্রাম',
-      photo: '',
-      sign: '',
-      yearFormat: 'NEW',
-      createdAt: new Date().toLocaleString('bn-BD', { hour12: true })
-    };
-    await NidStorageDB.save(sample);
   }
 
   async function renderDashboard() {
@@ -1673,20 +1220,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
               <i class="fa-solid fa-folder-open" style="font-size: 2.2rem; color: #cbd5e1;"></i>
               <span style="font-weight: 600;">কোন সংরক্ষিত NID রেকর্ড পাওয়া যায়নি</span>
-              <button type="button" id="innerAddSampleBtn" style="margin-top: 6px; padding: 6px 14px; background: #1e3a8a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
-                <i class="fa-solid fa-plus"></i> নমুনা ডাটা যোগ করুন
-              </button>
             </div>
           </td>
         </tr>
       `;
-      const innerAdd = document.getElementById('innerAddSampleBtn');
-      if (innerAdd) {
-        innerAdd.addEventListener('click', async () => {
-          await addSampleRecord();
-          await renderDashboard();
-        });
-      }
       return;
     }
 
@@ -1703,28 +1240,28 @@ document.addEventListener('DOMContentLoaded', () => {
         <td style="padding: 10px;">
           <div style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap;">
             
-            <!-- PROMINENT DEDICATED PDF DOWNLOAD BUTTON -->
-            <button type="button" class="btn-download-pdf-row" data-id="${item.id}" style="padding: 6px 14px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(5,150,105,0.3);" title="সম্পূর্ণ ফরমের তথ্য সহ PDF ডাউনলোড করুন">
-              <i class="fa-solid fa-file-pdf"></i> PDF ডাউনলোড
+            <!-- EXACT ORIGINAL PDF PREVIEW BUTTON -->
+            <button type="button" class="btn-preview-pdf" data-id="${item.id}" style="padding: 6px 12px; background: #0088cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,136,204,0.3);" title="মূল আপলোডকৃত PDF প্রিভিউ দেখুন">
+              <i class="fa-solid fa-file-pdf"></i> প্রিভিউ
             </button>
 
-            <!-- Smart Card Modal Button -->
-            <button type="button" class="btn-card-view" data-id="${item.id}" style="padding: 6px 10px; background: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="স্মার্ট কার্ড প্রিভিউ">
-              <i class="fa-solid fa-id-card"></i> কার্ড
+            <!-- EXACT ORIGINAL PDF DOWNLOAD BUTTON -->
+            <button type="button" class="btn-download-pdf-row" data-id="${item.id}" style="padding: 6px 12px; background: #059669; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(5,150,105,0.3);" title="মূল আপলোডকৃত PDF ডাউনলোড করুন">
+              <i class="fa-solid fa-download"></i> ডাউনলোড
             </button>
 
-            <!-- Exact Viewer Button -->
-            <button type="button" class="btn-nid-view" data-id="${item.id}" style="padding: 6px 10px; background: #0088cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="NID ডকুমেন্ট ভিউ">
-              <i class="fa-solid fa-eye"></i> ভিউ
+            <!-- OPEN ORIGINAL PDF IN NEW TAB -->
+            <button type="button" class="btn-open-tab" data-id="${item.id}" style="padding: 6px 8px; background: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem;" title="নতুন ট্যাবে মূল PDF খুলুন">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </button>
 
             <!-- Load into Form Button -->
-            <button type="button" class="load-nid-btn" data-id="${item.id}" style="padding: 6px 8px; background: #1e3a8a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 4px;" title="ফর্মে লোড">
+            <button type="button" class="load-nid-btn" data-id="${item.id}" style="padding: 6px 8px; background: #1e3a8a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem;" title="ফর্মে লোড">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
 
             <!-- Delete Button -->
-            <button type="button" class="delete-nid-btn" data-id="${item.id}" style="padding: 6px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 4px;" title="মুছুন">
+            <button type="button" class="delete-nid-btn" data-id="${item.id}" style="padding: 6px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem;" title="মুছুন">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -1744,7 +1281,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Wire PDF DOWNLOAD button in row
+    // Wire Exact Original PDF Preview button in row
+    document.querySelectorAll('.btn-preview-pdf').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        let el = e.target;
+        if (!el.getAttribute('data-id')) el = el.closest('.btn-preview-pdf');
+        const id = parseInt(el.getAttribute('data-id'), 10);
+        const item = await NidStorageDB.get(id);
+        if (item) {
+          openExactNidPdfViewer(item);
+        }
+      });
+    });
+
+    // Wire Exact Original PDF Download button in row
     document.querySelectorAll('.btn-download-pdf-row').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         let el = e.target;
@@ -1752,34 +1302,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = parseInt(el.getAttribute('data-id'), 10);
         const item = await NidStorageDB.get(id);
         if (item) {
-          await generateAndDownloadOfficialPdf(item, el);
+          downloadOriginalPdf(item, el);
         }
       });
     });
 
-    // Wire Card view button
-    document.querySelectorAll('.btn-card-view').forEach(btn => {
+    // Wire Open Original PDF in New Tab button in row
+    document.querySelectorAll('.btn-open-tab').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         let el = e.target;
-        if (!el.getAttribute('data-id')) el = el.closest('.btn-card-view');
+        if (!el.getAttribute('data-id')) el = el.closest('.btn-open-tab');
         const id = parseInt(el.getAttribute('data-id'), 10);
         const item = await NidStorageDB.get(id);
-        if (item) {
-          populateSmartCard(item);
-          if (cardModal) cardModal.classList.remove('hidden');
-        }
-      });
-    });
-
-    // Wire NID view button
-    document.querySelectorAll('.btn-nid-view').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        let el = e.target;
-        if (!el.getAttribute('data-id')) el = el.closest('.btn-nid-view');
-        const id = parseInt(el.getAttribute('data-id'), 10);
-        const item = await NidStorageDB.get(id);
-        if (item) {
-          openExactNidPdfViewer(item);
+        if (item && item.exactPdf) {
+          const blob = item.exactPdf instanceof Blob 
+            ? item.exactPdf 
+            : new Blob([item.exactPdf], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        } else {
+          alert('এই রেকর্ডের জন্য কোনো মূল আপলোডকৃত PDF ফাইল সংরক্ষিত নেই।');
         }
       });
     });
@@ -1808,13 +1350,20 @@ document.addEventListener('DOMContentLoaded', () => {
           else clearPhotoData();
           if (item.sign) setSignData(item.sign);
           else clearSignData();
-          if (item.exactPdf) currentExactNidPdfBlob = item.exactPdf;
+          if (item.exactPdf) {
+            currentExactNidPdfBlob = item.exactPdf;
+            currentPdfFileName = item.pdfFileName || `NID_${item.nidNo}.pdf`;
+            if (gbBadge && gbBadgeText) {
+              gbBadgeText.textContent = `PDF লোড হয়েছে: ${currentPdfFileName}`;
+              gbBadge.classList.remove('hidden');
+            }
+          }
 
           if (dashboardModal) dashboardModal.classList.add('hidden');
 
           if (parseStatusAlert) {
             parseStatusAlert.className = 'parse-alert success';
-            parseStatusAlert.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>আইডি (${item.nidNo})</strong> এর তথ্য ফর্মে লোড হয়েছে।`;
+            parseStatusAlert.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>আইডি (${item.nidNo})</strong> এর তথ্য ও মূল PDF ফর্মে লোড হয়েছে।`;
             parseStatusAlert.classList.remove('hidden');
           }
         }

@@ -293,7 +293,7 @@
             <i class="fa-solid fa-floppy-disk"></i> সেভ করুন (Save)
           </button>
           <button type="button" id="generatePdfBtn" class="btn-primary-action btn-generate-pdf" style="background-color: #0088cc; color: white;">
-            <i class="fa-solid fa-id-card"></i> NID স্মার্ট কার্ড ও PDF তৈরি
+            <i class="fa-solid fa-file-pdf"></i> NID PDF প্রিভিউ
           </button>
           <button type="button" id="listBtn" class="btn-secondary-action btn-view-list" style="background-color: #1e3a8a; color: white;">
             <i class="fa-solid fa-list-check"></i> আইডি কার্ড লিস্ট
@@ -305,195 +305,42 @@
     </div>
   </div>
 
-  <!-- =====================================================================
-       NID SMART CARD PREVIEW & GENERATE MODAL (FRONT & BACK CARD)
-       ===================================================================== -->
-  <div id="cardModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 900px;">
-      
-      <div class="modal-header">
-        <div class="modal-title">
-          <i class="fa-solid fa-id-card"></i> জাতীয় পরিচয়পত্র স্মার্ট কার্ড প্রিভিউ (<span id="modalYearLabel">NEW Format</span>)
-        </div>
-        <button type="button" class="btn-close" id="closeModalBtn">&times;</button>
-      </div>
 
-      <div class="modal-body">
-        
-        <!-- Action Toolbar inside Modal -->
-        <div class="modal-actions-bar">
-          <button type="button" class="action-btn" id="exportPdfBtn" style="background-color: #059669; color: white;">
-            <i class="fa-solid fa-file-pdf"></i> PDF ডাউনলোড
-          </button>
-          <button type="button" class="action-btn" id="exportPngBtn" style="background-color: #0284c7; color: white;">
-            <i class="fa-solid fa-image"></i> ইমেজ ডাউনলোড (PNG)
-          </button>
-          <button type="button" class="action-btn" id="printCardBtn" style="background-color: #1e3a8a; color: white;">
-            <i class="fa-solid fa-print"></i> প্রিন্ট করুন
-          </button>
-        </div>
-
-        <!-- Printable Document Area -->
-        <div class="printable-card-area" id="printableCardArea">
-          
-          <!-- SMART CARD (FRONT) -->
-          <div class="nid-card front-card" id="nidFront">
-            <div class="card-bg-watermark"></div>
-            
-            <div class="card-header">
-              <div class="govt-emblem">
-                <svg viewBox="0 0 100 100" class="emblem-svg">
-                  <circle cx="50" cy="50" r="45" fill="#006A4E" stroke="#DA291C" stroke-width="4"/>
-                  <circle cx="50" cy="50" r="26" fill="#DA291C"/>
-                  <path d="M50 20 L53 32 L65 32 L55 40 L59 52 L50 44 L41 52 L45 40 L35 32 L47 32 Z" fill="#FFD700"/>
-                  <path d="M22 62 Q35 75 50 78 Q65 75 78 62" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <div class="header-titles">
-                <h3 class="bn-title">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</h3>
-                <h4 class="en-title">Government of the People's Republic of Bangladesh</h4>
-                <p class="sub-title"><span class="smart-tag">National ID Card</span> / জাতীয় পরিচয়পত্র</p>
-              </div>
-              <div class="card-chip">
-                <div class="chip-line horizontal"></div>
-                <div class="chip-line vertical"></div>
-              </div>
-            </div>
-
-            <div class="card-body">
-              <div class="card-left">
-                <div class="card-photo-wrapper">
-                  <img id="cardPhotoImg" class="card-photo" src="" alt="Holder Photo">
-                  <div class="photo-fallback" id="cardPhotoFallback">
-                    <i class="fa-solid fa-user"></i>
-                  </div>
-                </div>
-                <div class="card-signature-wrapper">
-                  <img id="cardSignImg" class="card-signature" src="" alt="Signature">
-                  <span class="sign-fallback" id="cardSignFallback">স্বাক্ষর</span>
-                </div>
-              </div>
-
-              <div class="card-right">
-                <div class="info-row">
-                  <span class="label">নাম:</span>
-                  <span class="val bn bold" id="cNameBn">-</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">Name:</span>
-                  <span class="val en" id="cNameEn">-</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">পিতা:</span>
-                  <span class="val bn" id="cFather">-</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">মাতা:</span>
-                  <span class="val bn" id="cMother">-</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">Date of Birth:</span>
-                  <span class="val en bold danger-color" id="cDob">-</span>
-                </div>
-                <div class="info-row nid-number-row">
-                  <span class="label">NID No:</span>
-                  <span class="val nid-code" id="cNidNo">-</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="card-bottom">
-              <div class="security-strip"></div>
-            </div>
-          </div>
-
-          <!-- SMART CARD (BACK) -->
-          <div class="nid-card back-card" id="nidBack">
-            <div class="card-bg-watermark"></div>
-            
-            <div class="back-header">
-              <p class="disclaimer-text">এই কার্ডটি গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের সম্পত্তি। কার্ডটি ব্যবহারকারী ব্যতীত অন্য কোথাও পাওয়া গেলে নিকটস্থ পোস্ট অফিসে জমা দেওয়ার জন্য অনুরোধ করা হলো।</p>
-            </div>
-
-            <div class="back-body">
-              <div class="address-section">
-                <span class="addr-label">ঠিকানা:</span>
-                <span class="addr-val" id="cAddress">-</span>
-              </div>
-
-              <div class="back-meta-row">
-                <div class="meta-item">
-                  <span class="m-label">রক্তের গ্রুপ / Blood Group:</span>
-                  <span class="m-val bold danger-color" id="cBloodGroup">-</span>
-                </div>
-                <div class="meta-item">
-                  <span class="m-label">জন্মস্থান:</span>
-                  <span class="m-val" id="cPob">-</span>
-                </div>
-                <div class="meta-item">
-                  <span class="m-label">ইস্যুর তারিখ:</span>
-                  <span class="m-val" id="cIssueDate">-</span>
-                </div>
-              </div>
-
-              <div class="barcode-section">
-                <div class="barcode-wrapper">
-                  <svg id="cardBarcode"></svg>
-                </div>
-                <div class="qrcode-wrapper" id="cardQrCode"></div>
-              </div>
-            </div>
-
-            <div class="back-footer">
-              <div class="mrz-lines" id="cMrzLines">
-                I&lt;BGD&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0<br>
-                0000000M0000000BGD&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0<br>
-                &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  </div>
 
   <!-- =====================================================================
        EXACT ORIGINAL NID PDF DISPLAY MODAL (CANVAS HD VIEWER)
        ===================================================================== -->
   <div id="pdfDashboardModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 850px; padding: 20px;">
+    <div class="modal-content" style="max-width: 880px; padding: 20px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #0088cc; padding-bottom: 10px;">
-        <h2 style="margin: 0; color: #0088cc;"><i class="fa-solid fa-address-card"></i> NID Dashboard</h2>
+        <h2 style="margin: 0; color: #0088cc; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> মূল NID PDF প্রিভিউ (Original Uploaded Document)
+        </h2>
         <button type="button" class="btn-close" id="closePdfDashboardBtn" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;">&times;</button>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #f8f9fa; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
-        <div><strong><i class="fa-solid fa-id-badge"></i> NID ID Number:</strong> <span id="dashNidNo"></span></div>
-        <div><strong><i class="fa-solid fa-user"></i> Name:</strong> <span id="dashName"></span></div>
-        <div><strong><i class="fa-solid fa-calendar-days"></i> Date of Birth:</strong> <span id="dashDob"></span></div>
-        <div><strong><i class="fa-solid fa-clock"></i> Time:</strong> <span id="dashTime"></span></div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #f8f9fa; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #e2e8f0; font-size: 0.9rem;">
+        <div><strong><i class="fa-solid fa-id-badge" style="color: #1e3a8a;"></i> আইডি নম্বর:</strong> <span id="dashNidNo" style="font-weight: 700; color: #1e3a8a;"></span></div>
+        <div><strong><i class="fa-solid fa-user" style="color: #059669;"></i> নাম:</strong> <span id="dashName" style="font-weight: 600;"></span></div>
+        <div><strong><i class="fa-solid fa-calendar-days" style="color: #dc2626;"></i> জন্ম তারিখ:</strong> <span id="dashDob" style="font-weight: 600; color: #dc2626;"></span></div>
+        <div><strong><i class="fa-solid fa-file" style="color: #6366f1;"></i> ফাইল:</strong> <span id="dashFileName" style="font-weight: 500; font-size: 0.85rem;"></span></div>
+        <div><strong><i class="fa-solid fa-clock" style="color: #64748b;"></i> সময়:</strong> <span id="dashTime"></span></div>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-        <button type="button" id="downloadExactPdfBtn" class="btn-primary-download" style="background-color: #059669; padding: 8px 16px; font-size: 0.95rem;">
-          <i class="fa-solid fa-download"></i> PDF ডাউনলোড করুন
+        <button type="button" id="downloadExactPdfBtn" class="btn-primary-download" style="background-color: #059669; padding: 8px 16px; font-size: 0.92rem; font-weight: 700;">
+          <i class="fa-solid fa-download"></i> মূল PDF ডাউনলোড করুন
         </button>
-        <button type="button" id="openPdfNewTabBtn" class="btn-primary-download" style="background-color: #0284c7; padding: 8px 16px; font-size: 0.95rem;">
+        <button type="button" id="openPdfNewTabBtn" class="btn-primary-download" style="background-color: #0284c7; padding: 8px 16px; font-size: 0.92rem;">
           <i class="fa-solid fa-arrow-up-right-from-square"></i> নতুন ট্যাবে খুলুন
         </button>
-        <button type="button" id="printIdBtn" class="btn-primary-download" style="background-color: #0088cc; padding: 8px 16px; font-size: 0.95rem;">
-          <i class="fa-solid fa-print"></i> Print ID
+        <button type="button" id="printIdBtn" class="btn-primary-download" style="background-color: #1e3a8a; padding: 8px 16px; font-size: 0.92rem;">
+          <i class="fa-solid fa-print"></i> প্রিন্ট করুন
         </button>
       </div>
 
       <div id="printArea" style="text-align: center; margin-bottom: 15px;">
-        <h3 style="margin-bottom: 12px; color: #1e3a8a; font-weight: 700; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> NID PDF (Exact Document)
-        </h3>
-        <div id="dashPdfFrameContainer" style="width: 100%; min-height: 450px; border-radius: 8px; overflow-y: auto; background: #f8fafc; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center;">
+        <div id="dashPdfFrameContainer" style="width: 100%; min-height: 480px; border-radius: 8px; overflow-y: auto; background: #f8fafc; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); padding: 16px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center;">
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; color: #64748b; gap: 12px;">
             <i class="fa-solid fa-spinner fa-spin" style="font-size: 2.2rem; color: #0088cc;"></i>
             <span style="font-size: 1rem; font-weight: 500;">NID PDF লোড হচ্ছে...</span>
@@ -510,7 +357,7 @@
     <div class="modal-content" style="max-width: 1100px;">
       <div class="modal-header" style="background-color: #1e3a8a; justify-content: center; position: relative;">
         <div class="modal-title" style="color: white; font-weight: bold; font-size: 1.25rem;">
-          <i class="fa-solid fa-id-card-clip"></i> আইডি কার্ড লিস্ট ও PDF ডাউনলোড সিস্টেম
+          <i class="fa-solid fa-id-card-clip"></i> আইডি কার্ড লিস্ট ও PDF ম্যানেজমেন্ট
         </div>
         <button type="button" class="btn-close" id="closeDashboardBtn" style="position: absolute; right: 20px; color: white; background: none; border: none; font-size: 1.6rem; cursor: pointer;">&times;</button>
       </div>
@@ -547,9 +394,6 @@
               <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; color: #94a3b8;"></i>
               <input type="text" id="searchNid" placeholder="আইডি বা নাম দিয়ে খুঁজুন..." style="padding: 7px 12px 7px 32px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; outline: none; min-width: 230px; font-family: var(--font-bn);">
             </div>
-            <button type="button" id="loadSampleDataBtn" style="padding: 7px 12px; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" title="পরীক্ষার জন্য নমুনা ডাটা যোগ">
-              <i class="fa-solid fa-plus"></i> নমুনা ডাটা
-            </button>
           </div>
         </div>
 
@@ -562,7 +406,7 @@
                 <th style="padding: 12px;"><i class="fa-solid fa-id-card"></i> আইডি নং</th>
                 <th style="padding: 12px;"><i class="fa-solid fa-user"></i> নাম</th>
                 <th style="padding: 12px;"><i class="fa-solid fa-cake-candles"></i> জন্ম তারিখ</th>
-                <th style="padding: 12px; width: 280px;"><i class="fa-solid fa-file-pdf"></i> PDF ডাউনলোড ও একশন</th>
+                <th style="padding: 12px; width: 300px;"><i class="fa-solid fa-file-pdf"></i> মূল PDF ও একশন</th>
                 <th style="padding: 12px;"><i class="fa-solid fa-clock"></i> সময়</th>
               </tr>
             </thead>
@@ -585,9 +429,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Offscreen Container for Generating High-Resolution PDF Documents -->
-  <div id="dynamicPdfRenderContainer" style="position: fixed; left: -9999px; top: -9999px; width: 800px; background: #ffffff; z-index: -1;"></div>
 
   <!-- Custom Scripts -->
   <script src="app.js"></script>
