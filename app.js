@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Action Buttons
   const saveBtn = document.getElementById('saveBtn');
   const generatePdfBtn = document.getElementById('generatePdfBtn');
+  const downloadFormPdfBtn = document.getElementById('downloadFormPdfBtn');
   const listBtn = document.getElementById('listBtn');
 
 
@@ -865,6 +866,24 @@ document.addEventListener('DOMContentLoaded', () => {
         createdAt: new Date().toLocaleString('bn-BD', { hour12: true })
       };
       openExactNidPdfViewer(tempRecord);
+    });
+  }
+
+  // Main Form Download Button (Downloads currently uploaded PDF directly)
+  if (downloadFormPdfBtn) {
+    downloadFormPdfBtn.addEventListener('click', () => {
+      if (!currentExactNidPdfBlob) {
+        alert('অনুগ্রহ করে প্রথমে একটি NID PDF ফাইল আপলোড করুন!');
+        return;
+      }
+      const nidVal = val('nidNo', '');
+      const tempRecord = {
+        id: Date.now(),
+        nidNo: nidVal,
+        exactPdf: currentExactNidPdfBlob,
+        pdfFileName: currentPdfFileName || (nidVal ? `NID_${nidVal}.pdf` : 'Uploaded_NID.pdf')
+      };
+      downloadOriginalPdf(tempRecord, downloadFormPdfBtn);
     });
   }
 
